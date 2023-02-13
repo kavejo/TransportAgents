@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Specialized;
-using System.Configuration;
-using System.Text;
-using System.Diagnostics;
-using System.IO;
-using Microsoft.Exchange.Data.Globalization;
+﻿using Microsoft.Exchange.Data.Globalization;
 using Microsoft.Exchange.Data.Transport;
 using Microsoft.Exchange.Data.Transport.Email;
 using Microsoft.Exchange.Data.Transport.Routing;
-using Microsoft.Exchange.Data.Common;
-using Microsoft.Exchange.Data.Mime;
+using System;
+using System.IO;
+using System.Text;
 
 
 

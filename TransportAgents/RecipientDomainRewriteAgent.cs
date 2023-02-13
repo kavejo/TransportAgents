@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Exchange.Data.Transport;
+﻿using Microsoft.Exchange.Data.Transport;
 using Microsoft.Exchange.Data.Transport.Routing;
-using Microsoft.Exchange.Data.Transport.Smtp;
-using Microsoft.Exchange.Data.Transport.Email;
+using System;
+using System.Text;
 
 namespace TransportAgents
 {
@@ -38,7 +33,7 @@ namespace TransportAgents
                 /////
                 ///// P1 HEADER (SMTP envelope)
                 /////
-                
+
                 for (int intCounter = evtMessage.MailItem.Recipients.Count - 1; intCounter >= 0; intCounter--)
                 {
 

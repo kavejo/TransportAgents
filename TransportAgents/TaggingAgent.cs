@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
-using Microsoft.Exchange.Data.Transport;
-using Microsoft.Exchange.Data.Transport.Routing;
+﻿using Microsoft.Exchange.Data.Transport;
 using Microsoft.Exchange.Data.Transport.Smtp;
+using System;
+using System.Text;
 
 namespace TransportAgents
 {
