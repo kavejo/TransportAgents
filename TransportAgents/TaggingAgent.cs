@@ -55,6 +55,9 @@ namespace TransportAgents
                     textLog.WriteToText(errorEntry.ToString(), "Error");
                 }
             }
+
+            return;
+
         }
     }
 

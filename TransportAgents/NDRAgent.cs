@@ -50,7 +50,6 @@ namespace TransportAgents
                 {
                     source.Delete("NDRRoutingAgent");
                 }
-
             }
             catch (Exception ex)
             {
@@ -70,6 +69,9 @@ namespace TransportAgents
                     textLog.WriteToText(errorEntry.ToString(), "Error");
                 }
             }
+
+            return;
+
         }
     }
 

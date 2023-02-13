@@ -32,12 +32,13 @@ namespace TransportAgents
         void RecipientDomainRewrite_OnSubmittedMessage(SubmittedMessageEventSource source, QueuedMessageEventArgs evtMessage)
         {
 
-            /////
-            ///// P1 HEADER (SMTP envelope)
-            /////
 
             try
             {
+                /////
+                ///// P1 HEADER (SMTP envelope)
+                /////
+                
                 for (int intCounter = evtMessage.MailItem.Recipients.Count - 1; intCounter >= 0; intCounter--)
                 {
 
@@ -49,32 +50,11 @@ namespace TransportAgents
                         evtMessage.MailItem.Recipients[intCounter].Address = new RoutingAddress(msgRecipientP1, newDomainToUse);
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                using (TextLogger textLog = new TextLogger(@"F:\\Transport Agents", @"RecipientDomainRewriteAgent_Log.txt"))
-                {
-                    StringBuilder errorEntry = new StringBuilder();
 
-                    errorEntry.AppendLine("------------------------------------------------------------");
-                    errorEntry.AppendLine("EXCEPTION!!!");
-                    errorEntry.AppendLine("------------------------------------------------------------");
-                    errorEntry.AppendLine(String.Format("HResult: {0}", ex.HResult.ToString()));
-                    errorEntry.AppendLine(String.Format("Message: {0}", ex.Message.ToString()));
-                    errorEntry.AppendLine(String.Format("Source: {0}", ex.Source.ToString()));
-                    errorEntry.AppendLine(String.Format("InnerException: {0}", ex.InnerException.ToString()));
-                    errorEntry.AppendLine(String.Format("StackTrace: {0}", ex.StackTrace.ToString()));
+                /////
+                ///// P2 HEADER (Message envelope)
+                /////
 
-                    textLog.WriteToText(errorEntry.ToString(), "Error");
-                }
-            }
-
-            /////
-            ///// P2 HEADER (Message envelope)
-            /////
-
-            try
-            {
                 for (int intCounter = evtMessage.MailItem.Message.To.Count - 1; intCounter >= 0; intCounter--)
                 {
                     int atIndex = evtMessage.MailItem.Message.To[intCounter].SmtpAddress.IndexOf("@");
@@ -132,6 +112,9 @@ namespace TransportAgents
                     textLog.WriteToText(errorEntry.ToString(), "Error");
                 }
             }
+
+            return;
+
         }
     }
 }

@@ -47,7 +47,7 @@ namespace TransportAgents
                 {
                     MimeNode lastHeader = headers.LastChild;
                     TextHeader newHeader = new TextHeader(headerName, headerValue);
-                    headers.InsertBefore(newHeader, lastHeader);
+                    headers.InsertAfter(newHeader, lastHeader);
                 }
             }
             catch (Exception ex)
@@ -68,6 +68,9 @@ namespace TransportAgents
                     textLog.WriteToText(errorEntry.ToString(), "Error");
                 }
             }
+
+            return;
+
         }
     }
 
