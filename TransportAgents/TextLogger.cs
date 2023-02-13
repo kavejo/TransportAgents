@@ -5,6 +5,7 @@ using System.Text;
 
 namespace TransportAgents
 {
+
     public class TextLogger : IDisposable
     {
         private string _logPath = string.Empty;
@@ -24,9 +25,25 @@ namespace TransportAgents
                 _logPath = logPath;
                 _logStream = new StreamWriter(_logPath, true);
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                EventLogger.WriteToEventLog(e.Message, EventLogEntryType.Error);
+            }
+        }
+
+        public TextLogger(string logPath)
+        {
+            if (_logPath != logPath)
+            {
+                CloseStream();
+            }
+
+            try
+            {
+                _logPath = logPath;
+                _logStream = new StreamWriter(_logPath, true);
+            }
+            catch (Exception)
+            {
             }
         }
 
@@ -48,22 +65,11 @@ namespace TransportAgents
             }
         }
 
-        public void WriteToText(string message, string severity)
+        public void WriteToText(string message)
         {
-
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-            sb.AppendLine(String.Format("{0:yyyy-MM-dd HH:mm:ss}", DateTime.Now));
-            sb.AppendLine(String.Format("Severity: {0}", severity));
-            sb.AppendLine(message);
-            sb.AppendLine("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-            _logStream.WriteLine(sb.ToString());
+            _logStream.WriteLine(String.Format("{0:yyyy-MM-dd HH:mm:ss} | {1}", DateTime.Now, message));
             _logStream.Flush();
         }
 
-        public void WriteToText(string message)
-        {
-            WriteToText(message, "Information");
-        }
     }
 }

@@ -49,7 +49,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="EventLogger.cs" />
     <Compile Include="HeaderAgent.cs" />
     <Compile Include="NDRAgent.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

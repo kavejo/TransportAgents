@@ -14,41 +14,44 @@ namespace TransportAgents
         }
     }
 
-    public partial class TaggingAgent_Agent : SmtpReceiveAgent
+    public class TaggingAgent_Agent : SmtpReceiveAgent
     {
+
+        static string LogFile = String.Format("F:\\Transport Agents\\{0}.log", "TaggingAgent");
+        TextLogger TextLog = new TextLogger(LogFile);
 
         public TaggingAgent_Agent()
         {
-            OnRcptCommand += RcptMessageHandler;
+            OnRcptCommand += StripTagOutOfAddress;
         }
-
-        private void RcptMessageHandler(ReceiveCommandEventSource receiveMessageEventSource, RcptCommandEventArgs eventArgs)
+    
+        private void StripTagOutOfAddress(ReceiveCommandEventSource receiveMessageEventSource, RcptCommandEventArgs eventArgs)
         {
+            TextLog.WriteToText("Entering: StripTagOutOfAddress");
+
             RoutingAddress initialRecipientAddress = eventArgs.RecipientAddress;
             try
             {
-                int plusIndex = initialRecipientAddress.LocalPart.IndexOf("+");
-                string recipient = initialRecipientAddress.LocalPart.Substring(0, plusIndex);
-                string tag = initialRecipientAddress.LocalPart.Substring(plusIndex + 1);
-                string domain = initialRecipientAddress.DomainPart;
-                string revisedRecipientAddress = recipient + "@" + domain;
-                eventArgs.RecipientAddress = RoutingAddress.Parse(revisedRecipientAddress);
-                eventArgs.OriginalRecipient = revisedRecipientAddress;
+                if (initialRecipientAddress.LocalPart.Contains("+"))
+                {
+                    int plusIndex = initialRecipientAddress.LocalPart.IndexOf("+");
+                    string recipient = initialRecipientAddress.LocalPart.Substring(0, plusIndex);
+                    string tag = initialRecipientAddress.LocalPart.Substring(plusIndex + 1);
+                    string domain = initialRecipientAddress.DomainPart;
+                    string revisedRecipientAddress = recipient + "@" + domain;
+                    eventArgs.RecipientAddress = RoutingAddress.Parse(revisedRecipientAddress);
+                    eventArgs.OriginalRecipient = revisedRecipientAddress;
+                }
             }
             catch (Exception ex)
             {
-                StringBuilder errorEntry = new StringBuilder();
-                errorEntry.AppendLine("------------------------------------------------------------");
-                errorEntry.AppendLine("EXCEPTION!!!");
-                errorEntry.AppendLine("------------------------------------------------------------");
-                errorEntry.AppendLine(String.Format("HResult: {0}", ex.HResult.ToString()));
-                errorEntry.AppendLine(String.Format("Message: {0}", ex.Message.ToString()));
-                errorEntry.AppendLine(String.Format("Source: {0}", ex.Source.ToString()));
-                errorEntry.AppendLine(String.Format("InnerException: {0}", ex.InnerException.ToString()));
-                errorEntry.AppendLine(String.Format("StackTrace: {0}", ex.StackTrace.ToString()));
-                EventLogger.WriteToEventLog("TaggingAgent", EventLogEntryType.Error, errorEntry.ToString());
+                TextLog.WriteToText("------------------------------------------------------------");
+                TextLog.WriteToText("EXCEPTION!!!");
+                TextLog.WriteToText("------------------------------------------------------------");
+                TextLog.WriteToText(String.Format("HResult: {0}", ex.HResult.ToString()));
+                TextLog.WriteToText(String.Format("Message: {0}", ex.Message.ToString()));
+                TextLog.WriteToText(String.Format("Source: {0}", ex.Source.ToString()));
             }
-
             return;
 
         }

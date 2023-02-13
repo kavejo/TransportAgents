@@ -21,6 +21,9 @@ namespace TransportAgents
     public class HeaderAgent_Agent : RoutingAgent
     {
 
+        static string LogFile = String.Format("F:\\Transport Agents\\{0}.log", "HeaderAgent");
+        TextLogger TextLog = new TextLogger(LogFile);
+
         public HeaderAgent_Agent(SmtpServer server)
         {
             this.OnRoutedMessage += OnRoutedMessageInsertHeader;
@@ -28,6 +31,8 @@ namespace TransportAgents
 
         private void OnRoutedMessageInsertHeader(RoutedMessageEventSource source, QueuedMessageEventArgs e)
         {
+            TextLog.WriteToText("Entering: OnRoutedMessageInsertHeader");
+
             string headerName = "X-TOTONI";
             string headerValue = "This message has been processed by a Transpor Agent written by TOTONI@MICROSOFT.COM";
 
@@ -46,16 +51,12 @@ namespace TransportAgents
             }
             catch (Exception ex)
             {
-                StringBuilder errorEntry = new StringBuilder();
-                errorEntry.AppendLine("------------------------------------------------------------");
-                errorEntry.AppendLine("EXCEPTION!!!");
-                errorEntry.AppendLine("------------------------------------------------------------");
-                errorEntry.AppendLine(String.Format("HResult: {0}", ex.HResult.ToString()));
-                errorEntry.AppendLine(String.Format("Message: {0}", ex.Message.ToString()));
-                errorEntry.AppendLine(String.Format("Source: {0}", ex.Source.ToString()));
-                errorEntry.AppendLine(String.Format("InnerException: {0}", ex.InnerException.ToString()));
-                errorEntry.AppendLine(String.Format("StackTrace: {0}", ex.StackTrace.ToString()));
-                EventLogger.WriteToEventLog("HeaderAgent", EventLogEntryType.Error, errorEntry.ToString());
+                TextLog.WriteToText("------------------------------------------------------------");
+                TextLog.WriteToText("EXCEPTION!!!");
+                TextLog.WriteToText("------------------------------------------------------------");
+                TextLog.WriteToText(String.Format("HResult: {0}", ex.HResult.ToString()));
+                TextLog.WriteToText(String.Format("Message: {0}", ex.Message.ToString()));
+                TextLog.WriteToText(String.Format("Source: {0}", ex.Source.ToString()));
             }
 
             return;
