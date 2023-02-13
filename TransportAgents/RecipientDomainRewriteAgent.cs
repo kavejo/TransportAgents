@@ -1,6 +1,7 @@
 ﻿using Microsoft.Exchange.Data.Transport;
 using Microsoft.Exchange.Data.Transport.Routing;
 using System;
+using System.Diagnostics;
 using System.Text;
 
 namespace TransportAgents
@@ -91,21 +92,16 @@ namespace TransportAgents
             }
             catch (Exception ex)
             {
-                using (TextLogger textLog = new TextLogger(@"F:\\Transport Agents", @"RecipientDomainRewriteAgent_Log.txt"))
-                {
-                    StringBuilder errorEntry = new StringBuilder();
-
-                    errorEntry.AppendLine("------------------------------------------------------------");
-                    errorEntry.AppendLine("EXCEPTION!!!");
-                    errorEntry.AppendLine("------------------------------------------------------------");
-                    errorEntry.AppendLine(String.Format("HResult: {0}", ex.HResult.ToString()));
-                    errorEntry.AppendLine(String.Format("Message: {0}", ex.Message.ToString()));
-                    errorEntry.AppendLine(String.Format("Source: {0}", ex.Source.ToString()));
-                    errorEntry.AppendLine(String.Format("InnerException: {0}", ex.InnerException.ToString()));
-                    errorEntry.AppendLine(String.Format("StackTrace: {0}", ex.StackTrace.ToString()));
-
-                    textLog.WriteToText(errorEntry.ToString(), "Error");
-                }
+                StringBuilder errorEntry = new StringBuilder();
+                errorEntry.AppendLine("------------------------------------------------------------");
+                errorEntry.AppendLine("EXCEPTION!!!");
+                errorEntry.AppendLine("------------------------------------------------------------");
+                errorEntry.AppendLine(String.Format("HResult: {0}", ex.HResult.ToString()));
+                errorEntry.AppendLine(String.Format("Message: {0}", ex.Message.ToString()));
+                errorEntry.AppendLine(String.Format("Source: {0}", ex.Source.ToString()));
+                errorEntry.AppendLine(String.Format("InnerException: {0}", ex.InnerException.ToString()));
+                errorEntry.AppendLine(String.Format("StackTrace: {0}", ex.StackTrace.ToString()));
+                EventLogger.WriteToEventLog("RecipientDomainRewriteAgent", EventLogEntryType.Error, errorEntry.ToString());
             }
 
             return;

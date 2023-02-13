@@ -1,14 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 
 namespace TransportAgents
 {
     class EventLogger
     {
+
+        public static void WriteToEventLog(string source, EventLogEntryType severity, string message)
+        {
+            using (EventLog eventLog = new EventLog("Application"))
+            {
+                eventLog.Source = source;
+                eventLog.WriteEntry(message, severity);
+            }
+        }
 
         public static void WriteToEventLog(string message, EventLogEntryType severity)
         {
