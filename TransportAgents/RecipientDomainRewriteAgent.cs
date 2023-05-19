@@ -1,6 +1,7 @@
 ﻿using Microsoft.Exchange.Data.Transport;
 using Microsoft.Exchange.Data.Transport.Routing;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 
@@ -18,11 +19,13 @@ namespace TransportAgents
     public class RecipientDomainRewriteAgent_Agent : RoutingAgent
     {
 
-        static string LogFile = String.Format("F:\\Transport Agents\\{0}.log", "RecipientDomainRewriteAgent");
+        static readonly string LogFile = String.Format("F:\\Transport Agents\\{0}.log", "RecipientDomainRewriteAgent");
         TextLogger TextLog = new TextLogger(LogFile);
 
-        static string oldDomainToDecommission = "contoso.com";
-        static string newDomainToUse = "tailspin.com";
+        static readonly string oldDomainToDecommission = "contoso.com";
+        static readonly string newDomainToUse = "tailspin.com";
+        static readonly List<String> excludedFromRewrite = new List<String>(new String[] { "someone@testdomain.local", "someoneelse@testdomain.local"});
+
 
         public RecipientDomainRewriteAgent_Agent()
         {
@@ -33,13 +36,35 @@ namespace TransportAgents
         {
 
             TextLog.WriteToText("Entering: RecipientDomainRewrite_OnSubmittedMessage");
+            TextLog.WriteToText(String.Format("{0}:<{1}><{2}><{3}>", "Processing message", evtMessage.MailItem.Message.MessageId.ToString(), evtMessage.MailItem.FromAddress.ToString().Trim(), evtMessage.MailItem.Message.Subject.ToString().Trim()));
 
+            /////
+            ///// As there is a need for not parsing the messages sent from specific senders (listed in List<String> excludedFromRewrite).
+            ///// In this case the class will return to the caller before executing any of the rewrite-logic.
+            /////
             try
             {
-                /////
-                ///// P1 HEADER (SMTP envelope)
-                /////
+                if (excludedFromRewrite.Contains(evtMessage.MailItem.FromAddress.ToString().Trim()) || excludedFromRewrite.Contains(evtMessage.MailItem.Message.Sender.ToString().Trim()))
+                {
+                    TextLog.WriteToText(String.Format("{0}:P1={1}/P2={2}", "Avoid to process as the sender is", evtMessage.MailItem.FromAddress.ToString().Trim(), evtMessage.MailItem.Message.Sender.ToString().Trim()));
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                TextLog.WriteToText("------------------------------------------------------------");
+                TextLog.WriteToText("EXCEPTION IN SENDER CHECK!!!");
+                TextLog.WriteToText("------------------------------------------------------------");
+                TextLog.WriteToText(String.Format("HResult: {0}", ex.HResult.ToString()));
+                TextLog.WriteToText(String.Format("Message: {0}", ex.Message.ToString()));
+                TextLog.WriteToText(String.Format("Source: {0}", ex.Source.ToString()));
+            }
 
+            /////
+            ///// P1 HEADER (SMTP envelope)
+            /////
+            try
+            {
                 for (int intCounter = evtMessage.MailItem.Recipients.Count - 1; intCounter >= 0; intCounter--)
                 {
 
@@ -51,11 +76,22 @@ namespace TransportAgents
                         evtMessage.MailItem.Recipients[intCounter].Address = new RoutingAddress(msgRecipientP1, newDomainToUse);
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                TextLog.WriteToText("------------------------------------------------------------");
+                TextLog.WriteToText("EXCEPTION IN  P1 HEADER!!!");
+                TextLog.WriteToText("------------------------------------------------------------");
+                TextLog.WriteToText(String.Format("HResult: {0}", ex.HResult.ToString()));
+                TextLog.WriteToText(String.Format("Message: {0}", ex.Message.ToString()));
+                TextLog.WriteToText(String.Format("Source: {0}", ex.Source.ToString()));
+            }
 
-                /////
-                ///// P2 HEADER (Message envelope)
-                /////
-
+            /////
+            ///// P2 HEADER (Message envelope)
+            /////
+            try
+            {
                 for (int intCounter = evtMessage.MailItem.Message.To.Count - 1; intCounter >= 0; intCounter--)
                 {
                     int atIndex = evtMessage.MailItem.Message.To[intCounter].SmtpAddress.IndexOf("@");
@@ -98,7 +134,7 @@ namespace TransportAgents
             catch (Exception ex)
             {
                 TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText("EXCEPTION!!!");
+                TextLog.WriteToText("EXCEPTION IN P2 HEADER!!!");
                 TextLog.WriteToText("------------------------------------------------------------");
                 TextLog.WriteToText(String.Format("HResult: {0}", ex.HResult.ToString()));
                 TextLog.WriteToText(String.Format("Message: {0}", ex.Message.ToString()));
