@@ -26,6 +26,8 @@ namespace TransportAgents
 
         void DomainReroute_OnResolvedMessage(ResolvedMessageEventSource source, QueuedMessageEventArgs evtMessage)
         {
+            // Removing all headers as if the target for the Send Connector re-routes to ACS as some headers are reserved.
+            bool isUpstreamSendConnectorPointingToACS = true;
 
             string messageId = evtMessage.MailItem.Message.MessageId.ToString();
             string sender = evtMessage.MailItem.FromAddress.ToString().ToLower().Trim();
@@ -48,6 +50,15 @@ namespace TransportAgents
                         var dest = new RoutingOverride(newRouteDomain, DeliveryQueueDomain.UseOverrideDomain);
                         source.SetRoutingOverride(recipient, dest);
                         TextLog.WriteToText(String.Format("Routing domain overwritten for: {0}", recipient.Address));
+                    }
+
+                    if(isUpstreamSendConnectorPointingToACS)
+                    {
+                        foreach (Header header in evtMessage.MailItem.Message.MimeDocument.RootPart.Headers)
+                        {
+                            TextLog.WriteToText(String.Format("Header <{0}> with value <{1}> will be removed", header.Name, header.Value));
+                        }
+                        evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.RemoveAll();
                     }
 
                 }
