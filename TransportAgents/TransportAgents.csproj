@@ -31,13 +31,15 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Exchange.Data.Common, Version=15.2.1114.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Exchange.Data.Common, Version=15.2.1254.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Dependancies\Microsoft.Exchange.Data.Common.dll</HintPath>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="Microsoft.Exchange.Data.Transport, Version=15.2.1114.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Exchange.Data.Transport, Version=15.2.1254.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Dependancies\Microsoft.Exchange.Data.Transport.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -50,6 +52,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AutoResponderAgent.cs" />
+    <Compile Include="DomainReroutingAgent.cs" />
     <Compile Include="HeaderAgent.cs" />
     <Compile Include="NDRAgent.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

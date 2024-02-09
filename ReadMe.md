@@ -4,6 +4,7 @@
 ## Features
 
 - AutoResponderAgent: Sends an automatic response to emails directed to a mailbox or address that is being deprecated/removed
+- DomainReroutingAgent: Rewrite the routing domain to be a differnt one (can be used to re-route traffic via a specific send connector matching the domain name space)
 - HeaderAgent: Insert a custom header with a custom value in the header of every message that traverse the mail server
 - NDRAgent: Drops Non-Delivery Report (NDR) that contains in the body the word "DELETE"
 - RecipientDomainRewriteAgent: For any message sent to an address whose domain part is "contoso.com", it redirect the message to the same recipient on domain "tailspin.com"
@@ -17,7 +18,7 @@ It is possible to consecutively install more agents, that will then execute base
 
 1.	Copy the DLL to the server (i.e. F:\Transport Agents\\)
 2.	Make sure the Exchange acconts have access to the folder
-3.	Install the transport agent via Install-TransportAgent -Name AutoResponderAgent -TransportAgentFactory "TransportAgent.AutoResponderAgent" -AssemblyPath "F:\Transport Agents\TransportAgents.dll"
+3.	Install the transport agent via Install-TransportAgent -Name AutoResponderAgent -TransportAgentFactory "TransportAgents.AutoResponderAgent" -AssemblyPath "F:\Transport Agents\TransportAgents.dll"
 4.	Enalbe the chosen Transport Agent via Enable-TransportAgent AutoResponderAgent
 5.	Exit from Exchange Management Shell
 6.	Restart the MSExchangeTransport service via Restart-Service MSExchangeTransport
