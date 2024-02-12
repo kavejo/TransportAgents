@@ -39,5 +39,16 @@ It is possible to consecutively remove more agents, just repeat the steps 1-2 be
 4.	Restart the MSExchangeTransport service via 
 	- Restart-Service MSExchangeTransport
 
+## Important note for DomainReroutingAgent
+
+If you plan to use this Transport Agent to re-route part of your mass-mailing traffic to Azure Communication Services, make sure you create a send connector that matches the custom routing domain used and that you have configured ACS accordingly.
+
+1. First thing you have to configure ACS as detailed on https://learn.microsoft.com/en-us/azure/communication-services/quickstarts/email/send-email-smtp/smtp-authentication.
+2. Then, you need to create a new Send Connector and set smtp.azurecomm.net and the username/password retrieved at #1 as shown in the following image ![](Img/Connector_Example.jpg)
+3. Last you need to update the port from 25 to 587, this has to be done via PowerShell as shown on the following image ![](Img/Connector_Port.jpg)
+
+In the example the domain used is acs.toniolo.cloud, and there is a a check on the sender matching a pre-defined list of senders (noreply@toniolo.cloud) that need to be re-routed.
+This can easily be updated to read from Active Directory (i.e. from the Configuration Partition) the list of sender addresses to re-route.
+
 ## Notes
 More on Transport Agents can be found on https://learn.microsoft.com/en-us/exchange/mail-flow/transport-agents/transport-agents?view=exchserver-2019
