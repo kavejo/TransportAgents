@@ -26,6 +26,7 @@ namespace TransportAgents
         public DomainReroutingAgent_RoutingAgent()
         {
             base.OnResolvedMessage += new ResolvedMessageEventHandler(SendViaCustomRoutingDomain);
+            base.OnCategorizedMessage += new CategorizedMessageEventHandler(RemoveUnsupportedHeaders);
         }
 
         void SendViaCustomRoutingDomain(ResolvedMessageEventSource source, QueuedMessageEventArgs evtMessage)
@@ -34,7 +35,7 @@ namespace TransportAgents
             string sender = evtMessage.MailItem.FromAddress.ToString().ToLower().Trim();
 
             TextLog.WriteToText("----------------------------------------------------------------------------------------------------");
-            TextLog.WriteToText(String.Format("Processing message: {0} sent from <{1}>", messageId, sender));
+            TextLog.WriteToText(String.Format("SendViaCustomRoutingDomain - Processing message: {0} sent from <{1}>", messageId, sender));
             TextLog.WriteToText("----------------------------------------------------------------------------------------------------");
 
             try
@@ -59,24 +60,25 @@ namespace TransportAgents
                         }
                     }
 
-                    foreach (Header header in evtMessage.MailItem.Message.MimeDocument.RootPart.Headers)
-                    {
-                        TextLog.WriteToText(String.Format("Processing: {0}: {1}", header.Name, header.Value));
-                        if (header.Value == null || header.Value.Length == 0 || String.IsNullOrEmpty(header.Value))
-                        {
-                            evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.RemoveChild(header);
-                            TextLog.WriteToText(String.Format("Removed as EMPTY"));
-                        }
-                        if (header.Name == "Received")
-                        {
-                            evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.RemoveChild(header);
-                            TextLog.WriteToText(String.Format("Removed as of type RECEIVED"));
-                        }
-                    }
+                    //foreach (Header header in evtMessage.MailItem.Message.MimeDocument.RootPart.Headers)
+                    //{
+                    //    TextLog.WriteToText(String.Format("Processing: {0}: {1}", header.Name, header.Value));
+                    //    if (header.Value == null || header.Value.Length == 0 || String.IsNullOrEmpty(header.Value))
+                    //    {
+                    //        evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.RemoveChild(header);
+                    //        TextLog.WriteToText(String.Format("Removed as EMPTY"));
+                    //    }
+                    //    if (header.Name == "Received")
+                    //    {
+                    //        evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.RemoveChild(header);
+                    //        TextLog.WriteToText(String.Format("Removed as of type RECEIVED"));
+                    //    }
+                    //}
 
                     //TextLog.WriteToText("Adding custom headers");
                     //evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader("X-TransportAgent-Name", "DomainReroutingAgent"), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
-                    //evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader("X-TransportAgent-Creator", "Tommaso Toniolo - totoni@microsoft.com"), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
+                    //evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader("X-TransportAgent-Creator", "Tommaso Toniolo"), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
+                    //evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader("X-TransportAgent-Contact", "https://aka.ms/totoni"), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
 
                 }
 
@@ -86,7 +88,72 @@ namespace TransportAgents
             catch (Exception ex)
             {
                 TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText("EXCEPTION IN SENDVIACUSTOMROUTINGAGENT!!!");
+                TextLog.WriteToText("EXCEPTION IN SENDVIACUSTOMROUTINGDOMAIN!!!");
+                TextLog.WriteToText("------------------------------------------------------------");
+                TextLog.WriteToText(String.Format("HResult: {0}", ex.HResult.ToString()));
+                TextLog.WriteToText(String.Format("Message: {0}", ex.Message.ToString()));
+                TextLog.WriteToText(String.Format("Source: {0}", ex.Source.ToString()));
+            }
+
+            return;
+
+        }
+
+        void RemoveUnsupportedHeaders(CategorizedMessageEventSource source, QueuedMessageEventArgs evtMessage)
+        {
+            string messageId = evtMessage.MailItem.Message.MessageId.ToString();
+            string sender = evtMessage.MailItem.FromAddress.ToString().ToLower().Trim();
+
+            TextLog.WriteToText("----------------------------------------------------------------------------------------------------");
+            TextLog.WriteToText(String.Format("RemoveUnsupportedHeaders - Processing message: {0} sent from <{1}>", messageId, sender));
+            TextLog.WriteToText("----------------------------------------------------------------------------------------------------");
+            
+            try
+            {
+                Stopwatch headerRemovalTime = new Stopwatch();
+                headerRemovalTime.Start();
+
+                if (SendersToReroute.Contains(sender))
+                {
+                    TextLog.WriteToText(String.Format("Removing unsupported headers the message as the sender is: {0}", sender));
+
+                    foreach (Header header in evtMessage.MailItem.Message.MimeDocument.RootPart.Headers)
+                    {
+                        TextLog.WriteToText(String.Format("Processing: {0}: {1}", header.Name, header.Value));
+                        if (header.Value == null || header.Value.Length == 0 || String.IsNullOrEmpty(header.Value))
+                        {
+                            if (header.Name != "From" && header.Name != "To")
+                            {
+                                evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.RemoveChild(header);
+                                TextLog.WriteToText(String.Format("Removed as EMPTY"));
+                            }
+                            else
+                            {
+                                evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.RemoveChild(header);
+                                TextLog.WriteToText(String.Format("Kept EMPTY {0} as it will be updated later", header.Name));
+                            }
+                        }
+                        if (header.Name == "Received")
+                        {
+                            evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.RemoveChild(header);
+                            TextLog.WriteToText(String.Format("Removed as of type RECEIVED"));
+                        }
+                    }
+
+                    TextLog.WriteToText("Adding custom headers");
+                    evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader("X-TransportAgent-Name", "DomainReroutingAgent"), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
+                    evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader("X-TransportAgent-Creator", "Tommaso Toniolo"), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
+                    evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader("X-TransportAgent-Contact", "https://aka.ms/totoni"), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
+
+                }
+
+                headerRemovalTime.Stop();
+                TextLog.WriteToText(String.Format("RemoveUnsupportedHeaders executed for message {0} in {1} ms", messageId, headerRemovalTime.Elapsed.Milliseconds));
+            }
+            catch (Exception ex)
+            {
+                TextLog.WriteToText("------------------------------------------------------------");
+                TextLog.WriteToText("EXCEPTION IN REMOVEUNSUPPORTEDHEADERS!!!");
                 TextLog.WriteToText("------------------------------------------------------------");
                 TextLog.WriteToText(String.Format("HResult: {0}", ex.HResult.ToString()));
                 TextLog.WriteToText(String.Format("Message: {0}", ex.Message.ToString()));
@@ -98,4 +165,5 @@ namespace TransportAgents
         }
 
     }
+
 }
