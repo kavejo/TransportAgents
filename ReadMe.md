@@ -18,20 +18,26 @@ It is possible to consecutively install more agents, that will then execute base
 
 1.	Copy the DLL to the server (i.e. F:\Transport Agents\\)
 2.	Make sure the Exchange acconts have access to the folder
-3.	Install the transport agent via Install-TransportAgent -Name AutoResponderAgent -TransportAgentFactory "TransportAgents.AutoResponderAgent" -AssemblyPath "F:\Transport Agents\TransportAgents.dll"
-4.	Enalbe the chosen Transport Agent via Enable-TransportAgent AutoResponderAgent
+3.	Install the transport agent via 
+	- Install-TransportAgent -Name AutoResponderAgent -TransportAgentFactory "TransportAgents.AutoResponderAgent" -AssemblyPath "F:\Transport Agents\TransportAgents.dll"
+4.	Enalbe the chosen Transport Agent via 
+	- Enable-TransportAgent AutoResponderAgent
 5.	Exit from Exchange Management Shell
-6.	Restart the MSExchangeTransport service via Restart-Service MSExchangeTransport
+6.	Restart the MSExchangeTransport service via 
+	- Restart-Service MSExchangeTransport
 
 ## Removal
 
 Example shows the removal and uninstallation of the agent AutoResponderAgent, the same apply to all other agents in the sample, it's just necessary to select the appropriate agent name form the list at the start of this readme.
 It is possible to consecutively remove more agents, just repeat the steps 1-2 below for each agent you want to remove
 
-1.	Disable the chose agent via Disable-TransportAgent AutoResponderAgent
-2.	Remove the agent via Uninstall-TransportAgent AutoResponderAgent
+1.	Disable the chose agent via 
+	- Disable-TransportAgent AutoResponderAgent
+2.	Remove the agent via 
+	- Uninstall-TransportAgent AutoResponderAgent
 3.	Exit from Exchange Management Shell
-4.	Restart the MSExchangeTransport service
+4.	Restart the MSExchangeTransport service via 
+	- Restart-Service MSExchangeTransport
 
 ## Notes
 More on Transport Agents can be found on https://learn.microsoft.com/en-us/exchange/mail-flow/transport-agents/transport-agents?view=exchserver-2019
