@@ -76,7 +76,7 @@ namespace TransportAgents
                     {
                         if (header.Value == null || header.Value.Length == 0 || String.IsNullOrEmpty(header.Value))
                         {
-                            if (header.Name != "From" && header.Name != "To")
+                            if (header.Name.ToLower() != "from" && header.Name.ToLower() != "to" && header.Name.ToLower() != "cc" && header.Name.ToLower() != "bcc")
                             {
                                 evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.RemoveChild(header);
                             }
