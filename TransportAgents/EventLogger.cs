@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Diagnostics.Tracing;
-using System.Linq;
-using System.Reflection;
 using System.Security;
 
 namespace TransportAgents
@@ -13,23 +10,23 @@ namespace TransportAgents
 
         public EventLogger(string eventSource) 
         {
-            //try
-            //{
-            bool sourceExists = EventLog.SourceExists(eventSource);
-            Source = eventSource;
-            if (sourceExists == false)
+            try
             {
-                EventLog.CreateEventSource(Source, "Application");
+                bool sourceExists = EventLog.SourceExists(eventSource);
+                Source = eventSource;
+                if (sourceExists == false)
+                {
+                    EventLog.CreateEventSource(Source, "Application");
+                }
             }
-            //}
-            //catch (Exception ex)
-            //{
-            //    Source = "Application";
-            //    if (!EventLog.SourceExists(Source))
-            //    {
-            //        EventLog.CreateEventSource(Source, "Application");
-            //    }
-            //}
+            catch (SecurityException)
+            {
+                Source = "Application";
+                if (!EventLog.SourceExists(Source))
+                {
+                    EventLog.CreateEventSource(Source, "Application");
+                }
+            }
         }
 
         public void LogDebug(string message, bool isDebugEnabled)
