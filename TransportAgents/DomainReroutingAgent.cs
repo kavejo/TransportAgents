@@ -54,7 +54,11 @@ namespace TransportAgents
                             RoutingDomain customRoutingDomain = new RoutingDomain(SenderOverrides[sender]);
                             RoutingOverride destinationOverride = new RoutingOverride(customRoutingDomain, DeliveryQueueDomain.UseOverrideDomain);
                             source.SetRoutingOverride(recipient, destinationOverride);
-                            stringBuilder.AppendLine(String.Format("Recipient {0} overridden to {1}", recipient.Address.ToString(), SenderOverrides[sender]));
+                            stringBuilder.AppendLine(String.Format("Recipient {0} overridden to {1} as it is {2}", recipient.Address.ToString(), SenderOverrides[sender], recipient.RecipientCategory));
+                        }
+                        else
+                        {
+                            stringBuilder.AppendLine(String.Format("Recipient {0} not overridden as the recipient is {1}", recipient.Address.ToString(), recipient.RecipientCategory));
                         }
                     }
                 }
@@ -80,22 +84,36 @@ namespace TransportAgents
                 string messageId = evtMessage.MailItem.Message.MessageId.ToString();
                 string sender = evtMessage.MailItem.FromAddress.ToString().ToLower().Trim();
                 string subject = evtMessage.MailItem.Message.Subject.Trim();
+                int externalRecipients = 0;
 
                 stringBuilder.AppendLine(String.Format("Processing message {0} from {1} with subject {2} in RemoveUnsupportedHeaders", messageId, sender, subject));
 
                 if (SenderOverrides.ContainsKey(sender))
                 {
                     stringBuilder.AppendLine(String.Format("Evaluating headers as the sender is {0}", sender));
-                    
-                    foreach (Header header in evtMessage.MailItem.Message.MimeDocument.RootPart.Headers)
+
+                    foreach (EnvelopeRecipient recipient in evtMessage.MailItem.Recipients)
                     {
-                        stringBuilder.AppendLine(String.Format("Inspeceting header {0}:{1}", header.Name, String.IsNullOrEmpty(header.Value) ? String.Empty : header.Value));
-                        if (header.Value == null || header.Value.Length == 0 || String.IsNullOrEmpty(header.Value))
+                        if (recipient.RecipientCategory == RecipientCategory.InDifferentOrganization || recipient.RecipientCategory == RecipientCategory.Unknown)
                         {
-                            if (header.Name.ToLower() != "from" && header.Name.ToLower() != "to" && header.Name.ToLower() != "cc" && header.Name.ToLower() != "bcc")
+                            externalRecipients++; 
+                        }
+                    }
+                    stringBuilder.AppendLine(String.Format("There are {0} external recipients", externalRecipients));
+
+                    if (externalRecipients > 0)
+                    {
+                        stringBuilder.AppendLine(String.Format("Removing empty headers as there are extenral recipients"));
+                        foreach (Header header in evtMessage.MailItem.Message.MimeDocument.RootPart.Headers)
+                        {
+                            stringBuilder.AppendLine(String.Format("Inspeceting header {0}: {1}", header.Name, String.IsNullOrEmpty(header.Value) ? String.Empty : header.Value));
+                            if (header.Value == null || header.Value.Length == 0 || String.IsNullOrEmpty(header.Value))
                             {
-                                evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.RemoveChild(header);
-                                stringBuilder.AppendLine(String.Format("Header {0} REMOVED", header.Name));
+                                if (header.Name.ToLower() != "from" && header.Name.ToLower() != "to" && header.Name.ToLower() != "cc" && header.Name.ToLower() != "bcc")
+                                {
+                                    evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.RemoveChild(header);
+                                    stringBuilder.AppendLine(String.Format("Header {0} REMOVED", header.Name));
+                                }
                             }
                         }
                     }
