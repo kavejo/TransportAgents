@@ -52,11 +52,11 @@ This can easily be updated to read from Active Directory (i.e. from the Configur
 
 ## Logging information
 
-The sample contains two type of lggers, a text based that uses a hard-coded location ("F:\Transport Agents\<NameOfTheAgent>.log and one that rely on the Event Log.
+The sample contains two type of lggers, a text based that uses a hard-coded location ("F:\Transport Agents\NameOfTheAgent.log and one that rely on the Event Log.
 
 The preferred approach is to use the Evetn Log loggers, however note that the relevant Event source (matching the name of the Trasnport Agent class) has to be created manually.
 To do so, you can execute thw following command in an elevated prompt:
-	- New-EventLog -LogName Application -Source DomainReroutingAgent
+- New-EventLog -LogName Application -Source DomainReroutingAgent
 
 ## Notes
 More on Transport Agents can be found on https://learn.microsoft.com/en-us/exchange/mail-flow/transport-agents/transport-agents?view=exchserver-2019
