@@ -3,7 +3,6 @@ using Microsoft.Exchange.Data.Transport;
 using Microsoft.Exchange.Data.Transport.Routing;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace TransportAgents
 {
@@ -17,11 +16,14 @@ namespace TransportAgents
 
     public class DomainReroutingAgent_RoutingAgent : RoutingAgent
     {
-        static readonly string LogFile = String.Format("F:\\Transport Agents\\{0}.log", "DomainReroutingAgent");
-        static readonly List<string> SendersToReroute = new List<string> { "noreply@toniolo.cloud" };
-        static readonly RoutingDomain customRoutingDomain = new RoutingDomain("acs.toniolo.cloud");
-        static readonly RoutingOverride destinationOverride = new RoutingOverride(customRoutingDomain, DeliveryQueueDomain.UseOverrideDomain);
-        TextLogger TextLog = new TextLogger(LogFile);
+        static readonly bool IsDebugEnabled = true;
+        EventLogger EventLog = new EventLogger("DomainReroutingAgent");
+
+        static readonly Dictionary<string, string> SenderOverrides = new Dictionary<string, string>
+        {
+            { "noreply@toniolo.cloud", "acs.toniolo.cloud" },
+            { "acs_test@toniolo.cloud", "acs.toniolo.cloud" }
+        };
 
         public DomainReroutingAgent_RoutingAgent()
         {
@@ -37,25 +39,28 @@ namespace TransportAgents
                 string sender = evtMessage.MailItem.FromAddress.ToString().ToLower().Trim();
                 string subject = evtMessage.MailItem.Message.Subject.Trim();
 
-                if ( SendersToReroute.Contains(sender) )
+                EventLog.LogDebug(String.Format("Processing message {0} from {1} with subject {2} in SendViaCustomRoutingDomain", messageId, sender, subject), IsDebugEnabled);
+
+                if (SenderOverrides.ContainsKey(sender))
                 {
+                    EventLog.LogDebug(String.Format("Rerouting messages as the sender is {0}", sender), IsDebugEnabled);
                     foreach (EnvelopeRecipient recipient in evtMessage.MailItem.Recipients)
                     {
+                        EventLog.LogDebug(String.Format("Evaluating recipient {0}", recipient.Address.ToString()), IsDebugEnabled);
                         if (recipient.RecipientCategory == RecipientCategory.InDifferentOrganization || recipient.RecipientCategory == RecipientCategory.Unknown)
                         {
-                            source.SetRoutingOverride(recipient, destinationOverride);
+                            RoutingDomain customRoutingDomain = new RoutingDomain(SenderOverrides[sender]);
+                            RoutingOverride destinationOverride = new RoutingOverride(customRoutingDomain, DeliveryQueueDomain.UseOverrideDomain);
+                            source.SetRoutingOverride(recipient, destinationOverride); 
+                            EventLog.LogDebug(String.Format("Recipient {0} overridden to {1}", recipient.Address.ToString(), SenderOverrides[sender]), IsDebugEnabled);
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText("EXCEPTION IN SENDVIACUSTOMROUTINGDOMAIN!!!");
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText(String.Format("HResult: {0}", ex.HResult.ToString()));
-                TextLog.WriteToText(String.Format("Message: {0}", ex.Message.ToString()));
-                TextLog.WriteToText(String.Format("Source: {0}", ex.Source.ToString()));
+                EventLog.LogError("Exception in SendViaCustomRoutingDomain"); 
+                EventLog.LogException(ex);
             }
 
             return;
@@ -70,15 +75,20 @@ namespace TransportAgents
                 string sender = evtMessage.MailItem.FromAddress.ToString().ToLower().Trim();
                 string subject = evtMessage.MailItem.Message.Subject.Trim();
 
-                if (SendersToReroute.Contains(sender))
+                EventLog.LogDebug(String.Format("Processing message {0} from {1} with subject {2} in RemoveUnsupportedHeaders", messageId, sender, subject), IsDebugEnabled);
+
+                if (SenderOverrides.ContainsKey(sender))
                 {
+                    EventLog.LogDebug(String.Format("Evaluating headers as the sender is {0}", sender), IsDebugEnabled);
                     foreach (Header header in evtMessage.MailItem.Message.MimeDocument.RootPart.Headers)
                     {
+                        EventLog.LogDebug(String.Format("Inspeceting header {0}:{1}", header.Name, String.IsNullOrEmpty(header.Value) ? String.Empty : header.Value), IsDebugEnabled);
                         if (header.Value == null || header.Value.Length == 0 || String.IsNullOrEmpty(header.Value))
                         {
                             if (header.Name.ToLower() != "from" && header.Name.ToLower() != "to" && header.Name.ToLower() != "cc" && header.Name.ToLower() != "bcc")
                             {
                                 evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.RemoveChild(header);
+                                EventLog.LogDebug(String.Format("Header {0} removed", header.Name), IsDebugEnabled);
                             }
                         }
                     }
@@ -90,12 +100,8 @@ namespace TransportAgents
             }
             catch (Exception ex)
             {
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText("EXCEPTION IN REMOVEUNSUPPORTEDHEADERS!!!");
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText(String.Format("HResult: {0}", ex.HResult.ToString()));
-                TextLog.WriteToText(String.Format("Message: {0}", ex.Message.ToString()));
-                TextLog.WriteToText(String.Format("Source: {0}", ex.Source.ToString()));
+                EventLog.LogError("Exception in RemoveUnsupportedHeaders");
+                EventLog.LogException(ex); 
             }
 
             return;
