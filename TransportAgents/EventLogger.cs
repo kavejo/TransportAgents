@@ -8,7 +8,7 @@ namespace TransportAgents
     internal class EventLogger : IDisposable
     {
         private string Source = String.Empty;
-        StringBuilder EventLogMessage = null;
+        private StringBuilder EventLogMessage = null;
 
         public EventLogger(string eventSource = "Application") 
         {
@@ -46,6 +46,7 @@ namespace TransportAgents
             if (isDebugEnabled)
             {
                 EventLog.WriteEntry(Source, EventLogMessage.ToString(), EventLogEntryType.Information);
+                EventLogMessage.Clear();
             }
         }
 
@@ -57,6 +58,7 @@ namespace TransportAgents
         public void LogInformation()
         {
             EventLog.WriteEntry(Source, EventLogMessage.ToString(), EventLogEntryType.Information);
+            EventLogMessage.Clear();
         }
 
         public void LogWarning(string message)
@@ -67,6 +69,7 @@ namespace TransportAgents
         public void LogWarning()
         {
             EventLog.WriteEntry(Source, EventLogMessage.ToString(), EventLogEntryType.Warning);
+            EventLogMessage.Clear();
         }
 
         public void LogError(string message)
@@ -77,6 +80,7 @@ namespace TransportAgents
         public void LogError()
         {
             EventLog.WriteEntry(Source, EventLogMessage.ToString(), EventLogEntryType.Error);
+            EventLogMessage.Clear();
         }
 
         public void LogException(Exception ex)
@@ -87,6 +91,7 @@ namespace TransportAgents
         public void LogException()
         {
             EventLog.WriteEntry(Source, EventLogMessage.ToString(), EventLogEntryType.Error);
+            EventLogMessage.Clear();
         }
 
         public void AppendLogEntry(string message)
@@ -97,6 +102,13 @@ namespace TransportAgents
         public void AppendLogEntry(Exception ex)
         {
             EventLogMessage.AppendLine(ex.ToString());
+            EventLogMessage.AppendLine("--------------------------------------------------------------------------------");
+            EventLogMessage.AppendLine(String.Format("EXCEPTION MESSAGE: {0}", ex.Message));
+            EventLogMessage.AppendLine(String.Format("EXCEPTION HRESULT: {0}", ex.HResult));
+            EventLogMessage.AppendLine(String.Format("EXCEPTION SOURCE: {0}", ex.Source));
+            EventLogMessage.AppendLine(String.Format("EXCEPTION INNER EXCEPTION: {0}", ex.InnerException));
+            EventLogMessage.AppendLine(String.Format("EXCEPTION STRACK: {0}", ex.StackTrace));
+            EventLogMessage.AppendLine("--------------------------------------------------------------------------------");
         }
 
         public void AppendLogEntry(object obj)
@@ -107,6 +119,11 @@ namespace TransportAgents
         public void ClearLogEntry()
         {
             EventLogMessage.Clear();
+        }
+
+        public string GetLogEntry()
+        {
+            return EventLogMessage.ToString();
         }
 
         ~EventLogger()
