@@ -1,10 +1,10 @@
 # Transport Agents
-### This repository contains a Sample Transport Agent that implement various functions by leveraging Trasnport Agents in Microsoft Exchange 2019 CU12. 
+### This repository contains a Sample Transport Agent that implement various functions by leveraging Trasnport Agents in Microsoft Exchange 2019. 
 
 ## Features
 
-- AutoResponderAgent: Sends an automatic response to emails directed to a mailbox or address that is being deprecated/removed
-- DomainReroutingAgent: Rewrite the routing domain to be a differnt one (can be used to re-route traffic via a specific send connector matching the domain name space)
+- [AutoResponderAgent](https://github.com/kavejo/TransportAgents/wiki/AutoResponderAgent): Sends an automatic response to emails directed to a mailbox or address that is being deprecated/removed
+- [DomainReroutingAgent](https://github.com/kavejo/TransportAgents/wiki/DomainReroutingAgent): Rewrite the routing domain to be a differnt one (can be used to re-route traffic via a specific send connector matching the domain name space)
 - HeaderAgent: Insert a custom header with a custom value in the header of every message that traverse the mail server
 - NDRAgent: Drops Non-Delivery Report (NDR) that contains in the body the word "DELETE"
 - RecipientDomainRewriteAgent: For any message sent to an address whose domain part is "contoso.com", it redirect the message to the same recipient on domain "tailspin.com"
