@@ -101,13 +101,14 @@ namespace TransportAgents
 
         public void AppendLogEntry(Exception ex)
         {
-            EventLogMessage.AppendLine(ex.ToString());
             EventLogMessage.AppendLine("--------------------------------------------------------------------------------");
             EventLogMessage.AppendLine(String.Format("EXCEPTION MESSAGE: {0}", ex.Message));
             EventLogMessage.AppendLine(String.Format("EXCEPTION HRESULT: {0}", ex.HResult));
             EventLogMessage.AppendLine(String.Format("EXCEPTION SOURCE: {0}", ex.Source));
             EventLogMessage.AppendLine(String.Format("EXCEPTION INNER EXCEPTION: {0}", ex.InnerException));
             EventLogMessage.AppendLine(String.Format("EXCEPTION STRACK: {0}", ex.StackTrace));
+            EventLogMessage.AppendLine("--------------------------------------------------------------------------------");
+            EventLogMessage.AppendLine(ex.ToString());
             EventLogMessage.AppendLine("--------------------------------------------------------------------------------");
         }
 
