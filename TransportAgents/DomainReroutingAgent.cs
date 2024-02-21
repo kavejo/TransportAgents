@@ -62,15 +62,15 @@ namespace TransportAgents
                         }
                     }
                 }
+
+                EventLog.LogDebug(stringBuilder.ToString(), IsDebugEnabled);
+
             }
             catch (Exception ex)
             {
                 stringBuilder.AppendLine("Exception in SendViaCustomRoutingDomain");
                 stringBuilder.AppendLine(ex.ToString());
-            }
-            finally
-            {
-                EventLog.LogDebug(stringBuilder.ToString(), IsDebugEnabled);
+                EventLog.LogError(stringBuilder.ToString());
             }
 
             return;
@@ -121,16 +121,15 @@ namespace TransportAgents
                     evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader("X-TransportAgent-Name", "DomainReroutingAgent"), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
                     evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader("X-TransportAgent-Creator", "Tommaso Toniolo"), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
                     evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader("X-TransportAgent-Contact", "https://aka.ms/totoni"), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
+
+                    EventLog.LogDebug(stringBuilder.ToString(), IsDebugEnabled);
                 }
             }
             catch (Exception ex)
             {
                 stringBuilder.AppendLine("Exception in RemoveUnsupportedHeaders");
-                stringBuilder.AppendLine(ex.ToString()); 
-            }
-            finally
-            {
-                EventLog.LogDebug(stringBuilder.ToString(), IsDebugEnabled);
+                stringBuilder.AppendLine(ex.ToString());
+                EventLog.LogError(stringBuilder.ToString());
             }
 
             return;
