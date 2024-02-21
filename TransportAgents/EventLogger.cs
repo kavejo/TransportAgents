@@ -1,15 +1,19 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Security;
+using System.Text;
 
 namespace TransportAgents
 {
-    internal class EventLogger
+    internal class EventLogger : IDisposable
     {
         private string Source = String.Empty;
+        StringBuilder EventLogMessage = null;
 
-        public EventLogger(string eventSource) 
+        public EventLogger(string eventSource = "Application") 
         {
+            EventLogMessage = new StringBuilder();
+
             try
             {
                 bool sourceExists = EventLog.SourceExists(eventSource);
@@ -29,11 +33,19 @@ namespace TransportAgents
             }
         }
 
-        public void LogDebug(string message, bool isDebugEnabled)
+        public void LogDebug(string message, bool isDebugEnabled = true)
         {
             if (isDebugEnabled)
             {
                 EventLog.WriteEntry(Source, message, EventLogEntryType.Information);
+            }
+        }
+
+        public void LogDebug(bool isDebugEnabled = true)
+        {
+            if (isDebugEnabled)
+            {
+                EventLog.WriteEntry(Source, EventLogMessage.ToString(), EventLogEntryType.Information);
             }
         }
 
@@ -42,9 +54,19 @@ namespace TransportAgents
             EventLog.WriteEntry(Source, message, EventLogEntryType.Information);
         }
 
+        public void LogInformation()
+        {
+            EventLog.WriteEntry(Source, EventLogMessage.ToString(), EventLogEntryType.Information);
+        }
+
         public void LogWarning(string message)
         {
             EventLog.WriteEntry(Source, message, EventLogEntryType.Warning);
+        }
+
+        public void LogWarning()
+        {
+            EventLog.WriteEntry(Source, EventLogMessage.ToString(), EventLogEntryType.Warning);
         }
 
         public void LogError(string message)
@@ -52,10 +74,53 @@ namespace TransportAgents
             EventLog.WriteEntry(Source, message, EventLogEntryType.Error);
         }
 
+        public void LogError()
+        {
+            EventLog.WriteEntry(Source, EventLogMessage.ToString(), EventLogEntryType.Error);
+        }
+
         public void LogException(Exception ex)
         {
             EventLog.WriteEntry(Source, ex.ToString(), EventLogEntryType.Error);
         }
 
+        public void LogException()
+        {
+            EventLog.WriteEntry(Source, EventLogMessage.ToString(), EventLogEntryType.Error);
+        }
+
+        public void AppendLogEntry(string message)
+        {
+            EventLogMessage.Append(message);
+        }
+
+        public void AppendLogEntry(Exception ex)
+        {
+            EventLogMessage.Append(ex.ToString());
+        }
+
+        public void AppendLogEntry(object obj)
+        {
+            EventLogMessage.Append(obj.ToString());
+        }
+
+        ~EventLogger()
+        {
+            WriteEventLogOnExit();
+        }
+
+        void IDisposable.Dispose()
+        {
+            WriteEventLogOnExit();
+        }
+        private void WriteEventLogOnExit()
+        {
+            if (!String.IsNullOrEmpty(EventLogMessage.ToString()))
+            {
+                LogInformation(EventLogMessage.ToString());
+                EventLogMessage.Clear();
+                EventLogMessage = null;
+            }
+        }
     }
 }
