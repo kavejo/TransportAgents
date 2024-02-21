@@ -91,17 +91,22 @@ namespace TransportAgents
 
         public void AppendLogEntry(string message)
         {
-            EventLogMessage.Append(message);
+            EventLogMessage.AppendLine(message);
         }
 
         public void AppendLogEntry(Exception ex)
         {
-            EventLogMessage.Append(ex.ToString());
+            EventLogMessage.AppendLine(ex.ToString());
         }
 
         public void AppendLogEntry(object obj)
         {
-            EventLogMessage.Append(obj.ToString());
+            EventLogMessage.AppendLine(obj.ToString());
+        }
+
+        public void ClearLogEntry()
+        {
+            EventLogMessage.Clear();
         }
 
         ~EventLogger()
@@ -113,13 +118,14 @@ namespace TransportAgents
         {
             WriteEventLogOnExit();
         }
+
         private void WriteEventLogOnExit()
         {
             if (!String.IsNullOrEmpty(EventLogMessage.ToString()))
             {
+                EventLogMessage.AppendLine("Writing Event on Agent exit");
                 LogInformation(EventLogMessage.ToString());
                 EventLogMessage.Clear();
-                EventLogMessage = null;
             }
         }
     }
