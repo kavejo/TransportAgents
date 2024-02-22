@@ -16,30 +16,32 @@ namespace TransportAgents
 
             try
             {
-                bool sourceExists = EventLog.SourceExists(eventSource);
-                Source = eventSource;
-                if (sourceExists == false)
+                Source = eventSource; 
+                if (!EventLog.SourceExists(Source))
                 {
                     EventLog.CreateEventSource(Source, "Application");
                 }
             }
             catch (SecurityException)
             {
-                Source = "Application";
-                if (!EventLog.SourceExists(Source))
+                try
                 {
-                    EventLog.CreateEventSource(Source, "Application");
+                    Source = "TransportAgents";
+                    if (!!EventLog.SourceExists(Source))
+                    {
+                        EventLog.CreateEventSource(Source, "Application");
+                    }
+                }
+                catch (SecurityException)
+                {
+                    Source = "Application";
+                    if (!EventLog.SourceExists(Source))
+                    {
+                        EventLog.CreateEventSource(Source, "Application");
+                    }
                 }
             }
         }
-
-        //public void LogDebug(string message, bool isDebugEnabled = true)
-        //{
-        //    if (isDebugEnabled)
-        //    {
-        //        EventLog.WriteEntry(Source, message, EventLogEntryType.Information);
-        //    }
-        //}
 
         public void LogDebug(bool isDebugEnabled = true)
         {
@@ -50,21 +52,11 @@ namespace TransportAgents
             EventLogMessage.Clear();
         }
 
-        //public void LogInformation(string message)
-        //{
-        //    EventLog.WriteEntry(Source, message, EventLogEntryType.Information);
-        //}
-
         public void LogInformation()
         {
             EventLog.WriteEntry(Source, EventLogMessage.ToString(), EventLogEntryType.Information);
             EventLogMessage.Clear();
         }
-
-        //public void LogWarning(string message)
-        //{
-        //    EventLog.WriteEntry(Source, message, EventLogEntryType.Warning);
-        //}
 
         public void LogWarning()
         {
@@ -72,31 +64,11 @@ namespace TransportAgents
             EventLogMessage.Clear();
         }
 
-        //public void LogError(string message)
-        //{
-        //    EventLog.WriteEntry(Source, message, EventLogEntryType.Error);
-        //}
-
         public void LogError()
         {
             EventLog.WriteEntry(Source, EventLogMessage.ToString(), EventLogEntryType.Error);
             EventLogMessage.Clear();
         }
-
-        //public void LogException(Exception ex)
-        //{
-        //    StringBuilder sb = new StringBuilder();
-        //    sb.AppendLine("--------------------------------------------------------------------------------");
-        //    sb.AppendLine(String.Format("EXCEPTION MESSAGE: {0}", ex.Message));
-        //    sb.AppendLine(String.Format("EXCEPTION HRESULT: {0}", ex.HResult));
-        //    sb.AppendLine(String.Format("EXCEPTION SOURCE: {0}", ex.Source));
-        //    sb.AppendLine(String.Format("EXCEPTION INNER EXCEPTION: {0}", ex.InnerException));
-        //    sb.AppendLine(String.Format("EXCEPTION STRACK: {0}", ex.StackTrace));
-        //    sb.AppendLine("--------------------------------------------------------------------------------");
-        //    sb.AppendLine(ex.ToString());
-        //    sb.AppendLine("--------------------------------------------------------------------------------");
-        //    EventLog.WriteEntry(Source, sb.ToString(), EventLogEntryType.Error);
-        //}
 
         public void LogException()
         {
@@ -126,16 +98,6 @@ namespace TransportAgents
         {
             EventLogMessage.AppendLine(obj.ToString());
         }
-
-        //public void ClearLogEntry()
-        //{
-        //    EventLogMessage.Clear();
-        //}
-
-        //public string GetLogEntry()
-        //{
-        //    return EventLogMessage.ToString();
-        //}
 
         ~EventLogger()
         {
