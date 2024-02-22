@@ -17,8 +17,8 @@ namespace TransportAgents
     public class TaggingAgent_Agent : SmtpReceiveAgent
     {
 
-        static string LogFile = String.Format("F:\\Transport Agents\\{0}.log", "TaggingAgent");
-        TextLogger TextLog = new TextLogger(LogFile);
+        EventLogger EventLog = new EventLogger("TaggingAgent");
+        static bool IsDebugEnabled = true;
 
         public TaggingAgent_Agent()
         {
@@ -27,11 +27,14 @@ namespace TransportAgents
     
         private void StripTagOutOfAddress(ReceiveCommandEventSource receiveMessageEventSource, RcptCommandEventArgs eventArgs)
         {
-            TextLog.WriteToText("Entering: StripTagOutOfAddress");
 
-            RoutingAddress initialRecipientAddress = eventArgs.RecipientAddress;
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            EventLog.AppendLogEntry(String.Format("Entering: StripTagOutOfAddress"));
+
             try
             {
+                RoutingAddress initialRecipientAddress = eventArgs.RecipientAddress; 
+                
                 if (initialRecipientAddress.LocalPart.Contains("+"))
                 {
                     int plusIndex = initialRecipientAddress.LocalPart.IndexOf("+");
@@ -42,16 +45,18 @@ namespace TransportAgents
                     eventArgs.RecipientAddress = RoutingAddress.Parse(revisedRecipientAddress);
                     eventArgs.OriginalRecipient = revisedRecipientAddress;
                 }
+
+                EventLog.AppendLogEntry(String.Format("StripTagOutOfAddress took {0} ms to execute", stopwatch.ElapsedMilliseconds));
+                EventLog.LogDebug(IsDebugEnabled);
+
             }
             catch (Exception ex)
             {
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText("EXCEPTION!!!");
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText(String.Format("HResult: {0}", ex.HResult.ToString()));
-                TextLog.WriteToText(String.Format("Message: {0}", ex.Message.ToString()));
-                TextLog.WriteToText(String.Format("Source: {0}", ex.Source.ToString()));
+                EventLog.AppendLogEntry("Exception in TaggingAgent:StripTagOutOfAddress");
+                EventLog.AppendLogEntry(ex);
+                EventLog.LogError();
             }
+
             return;
 
         }
