@@ -21,28 +21,33 @@ namespace TransportAgents
         EventLogger EventLog = new EventLogger("DomainReroutingAgent");
 
         static readonly string RegistryHive = @"Software\TransportAgents\DomainReroutingAgent";
-        static readonly string RegistryKeyAgentEnabled = "AgentEnabled";
-        static readonly string RegistryKeyDebugEnabled = "DebugEnabled";
+        static readonly string RegistryKeyOverrideRoutingDomainAgentEnabled = "OverrideRoutingDomain-AgentEnabled";
+        static readonly string RegistryKeyOverrideRoutingDomainDebugEnabled = "OverrideRoutingDomain-DebugEnabled";
+        static readonly string RegistryKeyRemoveEmptyHeadersAgentEnabled = "RemoveEmptyHeaders-AgentEnabled";
+        static readonly string RegistryKeyRemoveEmptyHeadersDebugEnabled = "RemoveEmptyHeaders-DebugEnabled";
+
         static readonly string RegistryKeyEnabledSendersToReroute = "SendersToReroute";
 
-        static bool IsDebugEnabled = true;
-        static bool IsAgentEnabled = true;
+        static bool OverrideRoutingDomainAgentEnabled = true; 
+        static bool OverrideRoutingDomainDebugEnabled = true;
+        static bool RemoveEmptyHeadersAgentEnabled = true;
+        static bool RemoveEmptyHeadersDebugEnabled = true;
         static Dictionary<string, string> SenderOverrides = new Dictionary<string, string>();
 
         public DomainReroutingAgent_RoutingAgent()
         {
-            base.OnSubmittedMessage += new SubmittedMessageEventHandler(AccessRegistryConfiguration);
-            base.OnResolvedMessage += new ResolvedMessageEventHandler(SendViaCustomRoutingDomain);
-            base.OnCategorizedMessage += new CategorizedMessageEventHandler(RemoveUnsupportedHeaders);
+            base.OnSubmittedMessage += new SubmittedMessageEventHandler(RetrieveConfiguration);
+            base.OnResolvedMessage += new ResolvedMessageEventHandler(OverrideRoutingDomain);
+            base.OnCategorizedMessage += new CategorizedMessageEventHandler(RemoveEmptyHeaders);
         }
 
-        void AccessRegistryConfiguration(SubmittedMessageEventSource source, QueuedMessageEventArgs evtMessage)
+        void RetrieveConfiguration(SubmittedMessageEventSource source, QueuedMessageEventArgs evtMessage)
         {
             try
             {
                 RegistryKey registryPath = null;
                 Stopwatch stopwatch = Stopwatch.StartNew();
-                EventLog.AppendLogEntry(String.Format("Accessign Registry to check configuration of {0} in DomainReroutingAgent:AccessRegistryConfiguration", RegistryHive));
+                EventLog.AppendLogEntry(String.Format("Accessign Registry to check configuration of {0} in DomainReroutingAgent:RetrieveConfiguration", RegistryHive));
 
                 registryPath = Registry.CurrentUser.OpenSubKey(RegistryHive, RegistryKeyPermissionCheck.ReadWriteSubTree, System.Security.AccessControl.RegistryRights.FullControl);
 
@@ -50,11 +55,17 @@ namespace TransportAgents
                 {
                     EventLog.AppendLogEntry(String.Format("Registry Key {0} esists and contains {1} entries", RegistryHive, registryPath.ValueCount));
 
-                    Boolean.TryParse(registryPath.GetValue(RegistryKeyAgentEnabled).ToString(), out IsAgentEnabled);
-                    EventLog.AppendLogEntry(String.Format("The value of {0} is: {1}", RegistryKeyAgentEnabled, IsAgentEnabled));
+                    Boolean.TryParse(registryPath.GetValue(RegistryKeyOverrideRoutingDomainAgentEnabled).ToString(), out OverrideRoutingDomainAgentEnabled);
+                    EventLog.AppendLogEntry(String.Format("The value of {0} is: {1}", RegistryKeyOverrideRoutingDomainAgentEnabled, OverrideRoutingDomainAgentEnabled));
 
-                    Boolean.TryParse(registryPath.GetValue(RegistryKeyDebugEnabled).ToString(), out IsDebugEnabled);
-                    EventLog.AppendLogEntry(String.Format("The value of {0} is: {1}", RegistryKeyDebugEnabled, IsDebugEnabled));
+                    Boolean.TryParse(registryPath.GetValue(RegistryKeyOverrideRoutingDomainDebugEnabled).ToString(), out OverrideRoutingDomainDebugEnabled);
+                    EventLog.AppendLogEntry(String.Format("The value of {0} is: {1}", RegistryKeyOverrideRoutingDomainDebugEnabled, OverrideRoutingDomainDebugEnabled));
+
+                    Boolean.TryParse(registryPath.GetValue(RegistryKeyRemoveEmptyHeadersAgentEnabled).ToString(), out RemoveEmptyHeadersAgentEnabled);
+                    EventLog.AppendLogEntry(String.Format("The value of {0} is: {1}", RegistryKeyRemoveEmptyHeadersAgentEnabled, RemoveEmptyHeadersAgentEnabled));
+
+                    Boolean.TryParse(registryPath.GetValue(RegistryKeyRemoveEmptyHeadersDebugEnabled).ToString(), out RemoveEmptyHeadersDebugEnabled);
+                    EventLog.AppendLogEntry(String.Format("The value of {0} is: {1}", RegistryKeyRemoveEmptyHeadersDebugEnabled, RemoveEmptyHeadersDebugEnabled));
 
                     foreach (string s in (string[])registryPath.GetValue(RegistryKeyEnabledSendersToReroute))
                     {
@@ -74,20 +85,22 @@ namespace TransportAgents
                     EventLog.AppendLogEntry(String.Format("Registry Key {0} does not esist", RegistryHive));
                     Registry.CurrentUser.CreateSubKey(RegistryHive);
                     registryPath = Registry.CurrentUser.OpenSubKey(RegistryHive, RegistryKeyPermissionCheck.ReadWriteSubTree, System.Security.AccessControl.RegistryRights.FullControl);
-                    registryPath.SetValue(RegistryKeyAgentEnabled, "True", RegistryValueKind.String);
-                    registryPath.SetValue(RegistryKeyDebugEnabled, "True", RegistryValueKind.String);
+                    registryPath.SetValue(RegistryKeyOverrideRoutingDomainAgentEnabled, "True", RegistryValueKind.String);
+                    registryPath.SetValue(RegistryKeyOverrideRoutingDomainDebugEnabled, "True", RegistryValueKind.String);
+                    registryPath.SetValue(RegistryKeyRemoveEmptyHeadersAgentEnabled, "True", RegistryValueKind.String);
+                    registryPath.SetValue(RegistryKeyRemoveEmptyHeadersDebugEnabled, "True", RegistryValueKind.String);
                     registryPath.SetValue(RegistryKeyEnabledSendersToReroute, new[] { "noreply@toniolo.cloud|acs.toniolo.cloud" }, RegistryValueKind.MultiString);
                     EventLog.AppendLogEntry(String.Format("Created sample registry keys with test values"));
                 }
 
                 stopwatch.Stop();
-                EventLog.AppendLogEntry(String.Format("AccessRegistryConfiguration took {0} ms to execute", stopwatch.ElapsedMilliseconds));
-                EventLog.LogDebug(IsDebugEnabled);
+                EventLog.AppendLogEntry(String.Format("DomainReroutingAgent:RetrieveConfiguration took {0} ms to execute", stopwatch.ElapsedMilliseconds));
+                EventLog.LogDebug(OverrideRoutingDomainDebugEnabled);
 
             }
             catch (Exception ex)
             {
-                EventLog.AppendLogEntry("Exception in DomainReroutingAgent:AccessRegistryConfiguration");
+                EventLog.AppendLogEntry("Exception in DomainReroutingAgent:RetrieveConfiguration");
                 EventLog.AppendLogEntry(ex);
                 EventLog.LogError();
             }
@@ -95,7 +108,7 @@ namespace TransportAgents
             return;
         }
 
-        void SendViaCustomRoutingDomain(ResolvedMessageEventSource source, QueuedMessageEventArgs evtMessage)
+        void OverrideRoutingDomain(ResolvedMessageEventSource source, QueuedMessageEventArgs evtMessage)
         {
             try
             {
@@ -104,9 +117,9 @@ namespace TransportAgents
                 string subject = evtMessage.MailItem.Message.Subject.Trim();
                 Stopwatch stopwatch = Stopwatch.StartNew();
 
-                EventLog.AppendLogEntry(String.Format("Processing message {0} from {1} with subject {2} in DomainReroutingAgent:SendViaCustomRoutingDomain. IsAgentEnabled is set to: {3}", messageId, sender, subject, IsAgentEnabled));
+                EventLog.AppendLogEntry(String.Format("Processing message {0} from {1} with subject {2} in DomainReroutingAgent:OverrideRoutingDomain. OverrideRoutingDomainAgentEnabled is set to: {3}", messageId, sender, subject, OverrideRoutingDomainAgentEnabled));
 
-                if (IsAgentEnabled && SenderOverrides.ContainsKey(sender))
+                if (OverrideRoutingDomainAgentEnabled && SenderOverrides.ContainsKey(sender))
                 {
                     EventLog.AppendLogEntry(String.Format("Rerouting messages as the sender is {0}", sender));
                     foreach (EnvelopeRecipient recipient in evtMessage.MailItem.Recipients)
@@ -126,13 +139,13 @@ namespace TransportAgents
                     }
                 }
 
-                EventLog.AppendLogEntry(String.Format("SendViaCustomRoutingDomain took {0} ms to execute", stopwatch.ElapsedMilliseconds));
-                EventLog.LogDebug(IsDebugEnabled);
+                EventLog.AppendLogEntry(String.Format("DomainReroutingAgent:OverrideRoutingDomain took {0} ms to execute", stopwatch.ElapsedMilliseconds));
+                EventLog.LogDebug(OverrideRoutingDomainDebugEnabled);
 
             }
             catch (Exception ex)
             {
-                EventLog.AppendLogEntry("Exception in DomainReroutingAgent:SendViaCustomRoutingDomain");
+                EventLog.AppendLogEntry("Exception in DomainReroutingAgent:OverrideRoutingDomain");
                 EventLog.AppendLogEntry(ex);
                 EventLog.LogError();
             }
@@ -141,7 +154,7 @@ namespace TransportAgents
 
         }
 
-        void RemoveUnsupportedHeaders(CategorizedMessageEventSource source, QueuedMessageEventArgs evtMessage)
+        void RemoveEmptyHeaders(CategorizedMessageEventSource source, QueuedMessageEventArgs evtMessage)
         {
             try
             {
@@ -151,9 +164,9 @@ namespace TransportAgents
                 int externalRecipients = 0;
                 Stopwatch stopwatch = Stopwatch.StartNew();
 
-                EventLog.AppendLogEntry(String.Format("Processing message {0} from {1} with subject {2} in DomainReroutingAgent:RemoveUnsupportedHeaders. IsAgentEnabled is set to: {3}", messageId, sender, subject, IsAgentEnabled));
+                EventLog.AppendLogEntry(String.Format("Processing message {0} from {1} with subject {2} in DomainReroutingAgent:RemoveEmptyHeaders. OverrideRoutingDomainAgentEnabled is set to: {3}", messageId, sender, subject, OverrideRoutingDomainAgentEnabled));
 
-                if (IsAgentEnabled && SenderOverrides.ContainsKey(sender))
+                if (RemoveEmptyHeadersAgentEnabled && SenderOverrides.ContainsKey(sender))
                 {
                     EventLog.AppendLogEntry(String.Format("Evaluating headers as the sender is {0}", sender));
 
@@ -190,13 +203,13 @@ namespace TransportAgents
 
                 }
 
-                EventLog.AppendLogEntry(String.Format("RemoveUnsupportedHeaders took {0} ms to execute", stopwatch.ElapsedMilliseconds));
-                EventLog.LogDebug(IsDebugEnabled);
+                EventLog.AppendLogEntry(String.Format("DomainReroutingAgent:RemoveEmptyHeaders took {0} ms to execute", stopwatch.ElapsedMilliseconds));
+                EventLog.LogDebug(RemoveEmptyHeadersDebugEnabled);
 
             }
             catch (Exception ex)
             {
-                EventLog.AppendLogEntry("Exception in DomainReroutingAgent:RemoveUnsupportedHeaders");
+                EventLog.AppendLogEntry("Exception in DomainReroutingAgent:RemoveEmptyHeaders");
                 EventLog.AppendLogEntry(ex);
                 EventLog.LogError();
             }
