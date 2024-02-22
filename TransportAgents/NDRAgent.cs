@@ -23,8 +23,8 @@ namespace TransportAgents
     public class NDRAgent_Agent : RoutingAgent
     {
 
-        static string LogFile = String.Format("F:\\Transport Agents\\{0}.log", "NDRAgent");
-        TextLogger TextLog = new TextLogger(LogFile);
+        EventLogger EventLog = new EventLogger("NDRAgent");
+        static bool IsDebugEnabled = true;
 
         public NDRAgent_Agent(SmtpServer server)
         {
@@ -33,10 +33,12 @@ namespace TransportAgents
 
         private void OnRoutedMessageBlockNDR(RoutedMessageEventSource source, QueuedMessageEventArgs e)
         {
-            TextLog.WriteToText("Entering: OnRoutedMessageBlockNDR");
 
             try
             {
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                EventLog.AppendLogEntry(String.Format("Entering: NDRAgent:OnRoutedMessageBlockNDR"));
+
                 Body body = e.MailItem.Message.Body;
                 Encoding encoding = Charset.GetEncoding(e.MailItem.Message.Body.CharsetName);
                 string bodyValue = String.Empty;
@@ -51,15 +53,15 @@ namespace TransportAgents
                 {
                     source.Delete("NDRRoutingAgent");
                 }
+
+                EventLog.AppendLogEntry(String.Format("NDRAgent:OnRoutedMessageBlockNDR took {0} ms to execute", stopwatch.ElapsedMilliseconds));
+                EventLog.LogDebug(IsDebugEnabled);
             }
             catch (Exception ex)
             {
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText("EXCEPTION!!!");
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText(String.Format("HResult: {0}", ex.HResult.ToString()));
-                TextLog.WriteToText(String.Format("Message: {0}", ex.Message.ToString()));
-                TextLog.WriteToText(String.Format("Source: {0}", ex.Source.ToString()));
+                EventLog.AppendLogEntry("Exception in NDRAgent:OnRoutedMessageBlockNDR");
+                EventLog.AppendLogEntry(ex);
+                EventLog.LogError();
             }
 
             return;

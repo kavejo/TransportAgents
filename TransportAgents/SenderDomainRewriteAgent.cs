@@ -17,8 +17,8 @@ namespace TransportAgents
 
     public class SenderDomainRewriteAgent_Agent : RoutingAgent
     {
-        static readonly string LogFile = String.Format("F:\\Transport Agents\\{0}.log", "SenderDomainRewriteAgent");
-        TextLogger TextLog = new TextLogger(LogFile);
+        EventLogger EventLog = new EventLogger("SenderDomainRewriteAgent");
+        static bool IsDebugEnabled = true;
 
         static readonly string oldDomainToDecommission = "contoso.com";
         static readonly string newDomainToUse = "tailspin.com";
@@ -32,8 +32,8 @@ namespace TransportAgents
         void SenderDomainRewrite_OnSubmittedMessage(SubmittedMessageEventSource source, QueuedMessageEventArgs evtMessage)
         {
 
-            TextLog.WriteToText("Entering: SenderDomainRewrite_OnSubmittedMessage");
-            TextLog.WriteToText(String.Format("{0}:<{1}><{2}><{3}>", "Processing message", evtMessage.MailItem.Message.MessageId.ToString(), evtMessage.MailItem.FromAddress.ToString().Trim(), evtMessage.MailItem.Message.Subject.ToString().Trim()));
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            EventLog.AppendLogEntry(String.Format("Processing message {0} from {1} with subject {2} in SenderDomainRewriteAgent:SenderDomainRewrite_OnSubmittedMessage", evtMessage.MailItem.Message.MessageId.ToString(), evtMessage.MailItem.FromAddress.ToString().Trim(), evtMessage.MailItem.Message.Subject.ToString().Trim()));
 
             /////
             ///// As there is a need for not parsing the messages sent from specific senders (listed in List<String> excludedFromRewrite).
@@ -43,18 +43,16 @@ namespace TransportAgents
             {
                 if (excludedFromRewrite.Contains(evtMessage.MailItem.FromAddress.ToString().Trim()) || excludedFromRewrite.Contains(evtMessage.MailItem.Message.Sender.ToString().Trim()))
                 {
-                    TextLog.WriteToText(String.Format("{0}:P1={1}/P2={2}", "Avoid to process as the sender is", evtMessage.MailItem.FromAddress.ToString().Trim(), evtMessage.MailItem.Message.Sender.ToString().Trim()));
+                    EventLog.AppendLogEntry(String.Format("Avoid to process as the sender is: P1={0}/P2={1}", evtMessage.MailItem.FromAddress.ToString().Trim(), evtMessage.MailItem.Message.Sender.ToString().Trim()));
+                    EventLog.LogDebug(IsDebugEnabled);
                     return;
                 }
             }
             catch (Exception ex)
             {
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText("EXCEPTION IN SENDER CHECK!!!");
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText(String.Format("HResult: {0}", ex.HResult.ToString()));
-                TextLog.WriteToText(String.Format("Message: {0}", ex.Message.ToString()));
-                TextLog.WriteToText(String.Format("Source: {0}", ex.Source.ToString()));
+                EventLog.AppendLogEntry("Exception in SenderDomainRewriteAgent:SenderDomainRewrite_OnSubmittedMessage at Sender Exclusion Check");
+                EventLog.AppendLogEntry(ex);
+                EventLog.LogError();
             }
 
             /////
@@ -65,19 +63,19 @@ namespace TransportAgents
                 string msgSenderP1 = evtMessage.MailItem.FromAddress.LocalPart;
                 string msgDomainP1 = evtMessage.MailItem.FromAddress.DomainPart;
 
+                EventLog.AppendLogEntry(String.Format("Evaluating Sender P1: {0}@{1}", msgSenderP1, msgDomainP1));
+
                 if (msgDomainP1.ToLower() == oldDomainToDecommission.ToLower())
                 {
                     evtMessage.MailItem.FromAddress = new RoutingAddress(msgSenderP1, newDomainToUse);
+                    EventLog.AppendLogEntry(String.Format("Updated Sender P1: {0}@{1} to {2}@{3} ", msgSenderP1, msgDomainP1, msgSenderP1, newDomainToUse));
                 }
             }
             catch (Exception ex)
             {
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText("EXCEPTION IN P1 HEADER!!!");
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText(String.Format("HResult: {0}", ex.HResult.ToString()));
-                TextLog.WriteToText(String.Format("Message: {0}", ex.Message.ToString()));
-                TextLog.WriteToText(String.Format("Source: {0}", ex.Source.ToString()));
+                EventLog.AppendLogEntry("Exception in SenderDomainRewriteAgent:SenderDomainRewrite_OnSubmittedMessage at P1 Rewrite");
+                EventLog.AppendLogEntry(ex);
+                EventLog.LogError();
             }
 
             /////
@@ -90,21 +88,24 @@ namespace TransportAgents
                 string msgSenderP2 = evtMessage.MailItem.Message.From.SmtpAddress.Substring(0, atIndex);
                 string msgDomainP2 = evtMessage.MailItem.Message.From.SmtpAddress.Substring(atIndex + 1, recLength - atIndex - 1);
 
+                EventLog.AppendLogEntry(String.Format("Evaluating Sender P2: {0}@{1}", msgSenderP2, msgDomainP2));
+
                 if (msgDomainP2.ToLower() == oldDomainToDecommission.ToLower())
                 {
                     evtMessage.MailItem.Message.From.SmtpAddress = msgSenderP2 + "@" + newDomainToUse;
                     evtMessage.MailItem.Message.Sender.SmtpAddress = msgSenderP2 + "@" + newDomainToUse;
+                    EventLog.AppendLogEntry(String.Format("Updated Sender P2: {0}@{1} to {2}@{3} ", msgSenderP2, msgDomainP2, msgSenderP2, newDomainToUse));
                 }
             }
             catch (Exception ex)
             {
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText("EXCEPTION IN P2 HEADER!!!");
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText(String.Format("HResult: {0}", ex.HResult.ToString()));
-                TextLog.WriteToText(String.Format("Message: {0}", ex.Message.ToString()));
-                TextLog.WriteToText(String.Format("Source: {0}", ex.Source.ToString()));
+                EventLog.AppendLogEntry("Exception in SenderDomainRewriteAgent:SenderDomainRewrite_OnSubmittedMessage at P2 Rewrite");
+                EventLog.AppendLogEntry(ex);
+                EventLog.LogError();
             }
+
+            EventLog.AppendLogEntry(String.Format("SenderDomainRewriteAgent:SenderDomainRewrite_OnSubmittedMessage took {0} ms to execute", stopwatch.ElapsedMilliseconds));
+            EventLog.LogDebug(IsDebugEnabled);
 
             return;
 

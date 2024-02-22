@@ -3,7 +3,6 @@ using Microsoft.Exchange.Data.Transport;
 using Microsoft.Exchange.Data.Transport.Routing;
 using System;
 using System.Diagnostics;
-using System.Text;
 
 
 
@@ -21,8 +20,8 @@ namespace TransportAgents
     public class HeaderAgent_Agent : RoutingAgent
     {
 
-        static string LogFile = String.Format("F:\\Transport Agents\\{0}.log", "HeaderAgent");
-        TextLogger TextLog = new TextLogger(LogFile);
+        EventLogger EventLog = new EventLogger("HeaderAgent");
+        static bool IsDebugEnabled = true;
 
         public HeaderAgent_Agent(SmtpServer server)
         {
@@ -31,13 +30,15 @@ namespace TransportAgents
 
         private void OnRoutedMessageInsertHeader(RoutedMessageEventSource source, QueuedMessageEventArgs e)
         {
-            TextLog.WriteToText("Entering: OnRoutedMessageInsertHeader");
 
             string headerName = "X-TOTONI";
             string headerValue = "This message has been processed by a Transpor Agent written by TOTONI@MICROSOFT.COM";
 
             try
             {
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                EventLog.AppendLogEntry(String.Format("Entering: HeaderAgent:OnRoutedMessageInsertHeader"));
+
                 MimeDocument mimeDoc = e.MailItem.Message.MimeDocument;
                 HeaderList headers = mimeDoc.RootPart.Headers;
                 Header headerNamePresent = headers.FindFirst(headerName);
@@ -48,15 +49,16 @@ namespace TransportAgents
                     TextHeader newHeader = new TextHeader(headerName, headerValue);
                     headers.InsertAfter(newHeader, lastHeader);
                 }
+                
+                EventLog.AppendLogEntry(String.Format("HeaderAgent:OnRoutedMessageInsertHeader took {0} ms to execute", stopwatch.ElapsedMilliseconds));
+                EventLog.LogDebug(IsDebugEnabled);
+
             }
             catch (Exception ex)
             {
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText("EXCEPTION!!!");
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText(String.Format("HResult: {0}", ex.HResult.ToString()));
-                TextLog.WriteToText(String.Format("Message: {0}", ex.Message.ToString()));
-                TextLog.WriteToText(String.Format("Source: {0}", ex.Source.ToString()));
+                EventLog.AppendLogEntry("Exception in HeaderAgent:OnRoutedMessageInsertHeader");
+                EventLog.AppendLogEntry(ex);
+                EventLog.LogError();
             }
 
             return;

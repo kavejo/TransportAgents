@@ -1,12 +1,8 @@
-﻿using Microsoft.Exchange.Data.Mime;
-using Microsoft.Exchange.Data.Transport;
-using Microsoft.Exchange.Data.Transport.Email;
+﻿using Microsoft.Exchange.Data.Transport;
 using Microsoft.Exchange.Data.Transport.Routing;
 using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Net.Mail;
-using System.Text;
 
 
 
@@ -24,8 +20,8 @@ namespace TransportAgents
     public class AutoResponderAgent_Agent : RoutingAgent
     {
 
-        static string LogFile = String.Format("F:\\Transport Agents\\{0}.log", "AutoResponderAgent");
-        TextLogger TextLog = new TextLogger(LogFile);
+        EventLogger EventLog = new EventLogger("AutoResponderAgent");
+        static bool IsDebugEnabled = true;
 
         public AutoResponderAgent_Agent(SmtpServer server)
         {
@@ -34,10 +30,11 @@ namespace TransportAgents
 
         private void OnRoutedMessageGenerateAutoResponse(RoutedMessageEventSource source, QueuedMessageEventArgs e)
         {
-            TextLog.WriteToText("Entering: OnRoutedMessageGenerateAutoResponse");
-
             try
             {
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                EventLog.AppendLogEntry(String.Format("Entering: AutoResponderAgent:OnRoutedMessageGenerateAutoResponse")); 
+                
                 string sender = e.MailItem.FromAddress.ToString();
                 string autoResponseSubject = "This email address will be deprecated";
                 string autoResponseBody = "Thank you for your e-mail; this email address will be deprecated and won't receive messages anymore.";
@@ -54,15 +51,15 @@ namespace TransportAgents
                 autoResponse.Headers.Add(headerName, headerValue);
 
                 // Need to find how to send the "autoResponse" MailMessage here
+
+                EventLog.AppendLogEntry(String.Format("AutoResponderAgent:OnRoutedMessageInsertHeader took {0} ms to execute", stopwatch.ElapsedMilliseconds));
+                EventLog.LogDebug(IsDebugEnabled);
             }
             catch (Exception ex)
             {
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText("EXCEPTION!!!");
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText(String.Format("HResult: {0}", ex.HResult.ToString()));
-                TextLog.WriteToText(String.Format("Message: {0}", ex.Message.ToString()));
-                TextLog.WriteToText(String.Format("Source: {0}", ex.Source.ToString()));
+                EventLog.AppendLogEntry("Exception in AutoResponderAgent:OnRoutedMessageGenerateAutoResponse");
+                EventLog.AppendLogEntry(ex);
+                EventLog.LogError();
             }
 
             return;

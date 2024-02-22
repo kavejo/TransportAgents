@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using System.Xml.Linq;
 
 namespace TransportAgents
 {
@@ -19,8 +20,8 @@ namespace TransportAgents
     public class RecipientDomainRewriteAgent_Agent : RoutingAgent
     {
 
-        static readonly string LogFile = String.Format("F:\\Transport Agents\\{0}.log", "RecipientDomainRewriteAgent");
-        TextLogger TextLog = new TextLogger(LogFile);
+        EventLogger EventLog = new EventLogger("RecipientDomainRewriteAgent");
+        static bool IsDebugEnabled = true;
 
         static readonly string oldDomainToDecommission = "contoso.com";
         static readonly string newDomainToUse = "tailspin.com";
@@ -34,9 +35,9 @@ namespace TransportAgents
 
         void RecipientDomainRewrite_OnSubmittedMessage(SubmittedMessageEventSource source, QueuedMessageEventArgs evtMessage)
         {
-
-            TextLog.WriteToText("Entering: RecipientDomainRewrite_OnSubmittedMessage");
-            TextLog.WriteToText(String.Format("{0}:<{1}><{2}><{3}>", "Processing message", evtMessage.MailItem.Message.MessageId.ToString(), evtMessage.MailItem.FromAddress.ToString().Trim(), evtMessage.MailItem.Message.Subject.ToString().Trim()));
+            
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            EventLog.AppendLogEntry(String.Format("Processing message {0} from {1} with subject {2} in RecipientDomainRewriteAgent:RecipientDomainRewrite_OnSubmittedMessage", evtMessage.MailItem.Message.MessageId.ToString(), evtMessage.MailItem.FromAddress.ToString().Trim(), evtMessage.MailItem.Message.Subject.ToString().Trim()));
 
             /////
             ///// As there is a need for not parsing the messages sent from specific senders (listed in List<String> excludedFromRewrite).
@@ -46,18 +47,16 @@ namespace TransportAgents
             {
                 if (excludedFromRewrite.Contains(evtMessage.MailItem.FromAddress.ToString().Trim()) || excludedFromRewrite.Contains(evtMessage.MailItem.Message.Sender.ToString().Trim()))
                 {
-                    TextLog.WriteToText(String.Format("{0}:P1={1}/P2={2}", "Avoid to process as the sender is", evtMessage.MailItem.FromAddress.ToString().Trim(), evtMessage.MailItem.Message.Sender.ToString().Trim()));
+                    EventLog.AppendLogEntry(String.Format("Avoid to process as the sender is: P1={0}/P2={1}", evtMessage.MailItem.FromAddress.ToString().Trim(), evtMessage.MailItem.Message.Sender.ToString().Trim()));
+                    EventLog.LogDebug(IsDebugEnabled);
                     return;
                 }
             }
             catch (Exception ex)
             {
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText("EXCEPTION IN SENDER CHECK!!!");
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText(String.Format("HResult: {0}", ex.HResult.ToString()));
-                TextLog.WriteToText(String.Format("Message: {0}", ex.Message.ToString()));
-                TextLog.WriteToText(String.Format("Source: {0}", ex.Source.ToString()));
+                EventLog.AppendLogEntry("Exception in RecipientDomainRewriteAgent:RecipientDomainRewrite_OnSubmittedMessage at Sender Exclusion Check");
+                EventLog.AppendLogEntry(ex);
+                EventLog.LogError();
             }
 
             /////
@@ -71,20 +70,20 @@ namespace TransportAgents
                     string msgRecipientP1 = evtMessage.MailItem.Recipients[intCounter].Address.LocalPart;
                     string msgDomainP1 = evtMessage.MailItem.Recipients[intCounter].Address.DomainPart;
 
+                    EventLog.AppendLogEntry(String.Format("Evaluating Recipient P1: {0}@{1}", msgRecipientP1, msgDomainP1));
+
                     if (msgDomainP1.ToLower() == oldDomainToDecommission.ToLower())
                     {
                         evtMessage.MailItem.Recipients[intCounter].Address = new RoutingAddress(msgRecipientP1, newDomainToUse);
+                        EventLog.AppendLogEntry(String.Format("Updated Recipient P1: {0}@{1} to {2}@{3} ", msgRecipientP1, msgDomainP1, msgRecipientP1, newDomainToUse));
                     }
                 }
             }
             catch (Exception ex)
             {
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText("EXCEPTION IN  P1 HEADER!!!");
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText(String.Format("HResult: {0}", ex.HResult.ToString()));
-                TextLog.WriteToText(String.Format("Message: {0}", ex.Message.ToString()));
-                TextLog.WriteToText(String.Format("Source: {0}", ex.Source.ToString()));
+                EventLog.AppendLogEntry("Exception in RecipientDomainRewriteAgent:RecipientDomainRewrite_OnSubmittedMessage at P1 Rewrite");
+                EventLog.AppendLogEntry(ex);
+                EventLog.LogError();
             }
 
             /////
@@ -99,9 +98,12 @@ namespace TransportAgents
                     string msgRecipientP2 = evtMessage.MailItem.Message.To[intCounter].SmtpAddress.Substring(0, atIndex);
                     string msgDomainP2 = evtMessage.MailItem.Message.To[intCounter].SmtpAddress.Substring(atIndex + 1, recLength - atIndex - 1);
 
+                    EventLog.AppendLogEntry(String.Format("Evaluating Recipient P2 in TO: {0}@{1}", msgRecipientP2, msgDomainP2));
+
                     if (msgDomainP2.ToLower() == oldDomainToDecommission.ToLower())
                     {
                         evtMessage.MailItem.Message.To[intCounter].SmtpAddress = msgRecipientP2 + "@" + newDomainToUse;
+                        EventLog.AppendLogEntry(String.Format("Updated Recipient P2 in TO: {0}@{1} to {2}@{3} ", msgRecipientP2, msgDomainP2, msgRecipientP2, newDomainToUse));
                     }
                 }
 
@@ -112,9 +114,12 @@ namespace TransportAgents
                     string msgRecipientP2 = evtMessage.MailItem.Message.Cc[intCounter].SmtpAddress.Substring(0, atIndex);
                     string msgDomainP2 = evtMessage.MailItem.Message.Cc[intCounter].SmtpAddress.Substring(atIndex + 1, recLength - atIndex - 1);
 
+                    EventLog.AppendLogEntry(String.Format("Evaluating Recipient P2 in CC: {0}@{1}", msgRecipientP2, msgDomainP2));
+
                     if (msgDomainP2.ToLower() == oldDomainToDecommission.ToLower())
                     {
                         evtMessage.MailItem.Message.Cc[intCounter].SmtpAddress = msgRecipientP2 + "@" + newDomainToUse;
+                        EventLog.AppendLogEntry(String.Format("Updated Recipient P2 in CC: {0}@{1} to {2}@{3} ", msgRecipientP2, msgDomainP2, msgRecipientP2, newDomainToUse));
                     }
                 }
 
@@ -125,21 +130,24 @@ namespace TransportAgents
                     string msgRecipientP2 = evtMessage.MailItem.Message.Bcc[intCounter].SmtpAddress.Substring(0, atIndex);
                     string msgDomainP2 = evtMessage.MailItem.Message.Bcc[intCounter].SmtpAddress.Substring(atIndex + 1, recLength - atIndex - 1);
 
+                    EventLog.AppendLogEntry(String.Format("Evaluating Recipient P2 in BCC: {0}@{1}", msgRecipientP2, msgDomainP2));
+
                     if (msgDomainP2.ToLower() == oldDomainToDecommission.ToLower())
                     {
                         evtMessage.MailItem.Message.Bcc[intCounter].SmtpAddress = msgRecipientP2 + "@" + newDomainToUse;
+                        EventLog.AppendLogEntry(String.Format("Updated Recipient P2 in BCC: {0}@{1} to {2}@{3} ", msgRecipientP2, msgDomainP2, msgRecipientP2, newDomainToUse));
                     }
                 }
             }
             catch (Exception ex)
             {
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText("EXCEPTION IN P2 HEADER!!!");
-                TextLog.WriteToText("------------------------------------------------------------");
-                TextLog.WriteToText(String.Format("HResult: {0}", ex.HResult.ToString()));
-                TextLog.WriteToText(String.Format("Message: {0}", ex.Message.ToString()));
-                TextLog.WriteToText(String.Format("Source: {0}", ex.Source.ToString()));
+                EventLog.AppendLogEntry("Exception in RecipientDomainRewriteAgent:RecipientDomainRewrite_OnSubmittedMessage at P2 Rewrite");
+                EventLog.AppendLogEntry(ex);
+                EventLog.LogError();
             }
+
+            EventLog.AppendLogEntry(String.Format("RecipientDomainRewriteAgent:RecipientDomainRewrite_OnSubmittedMessage took {0} ms to execute", stopwatch.ElapsedMilliseconds));
+            EventLog.LogDebug(IsDebugEnabled);
 
             return;
 

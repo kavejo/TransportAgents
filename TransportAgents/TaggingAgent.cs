@@ -2,7 +2,6 @@
 using Microsoft.Exchange.Data.Transport.Smtp;
 using System;
 using System.Diagnostics;
-using System.Text;
 
 namespace TransportAgents
 {
@@ -28,11 +27,11 @@ namespace TransportAgents
         private void StripTagOutOfAddress(ReceiveCommandEventSource receiveMessageEventSource, RcptCommandEventArgs eventArgs)
         {
 
-            Stopwatch stopwatch = Stopwatch.StartNew();
-            EventLog.AppendLogEntry(String.Format("Entering: StripTagOutOfAddress"));
-
             try
             {
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                EventLog.AppendLogEntry(String.Format("Entering: TaggingAgent:StripTagOutOfAddress")); 
+                
                 RoutingAddress initialRecipientAddress = eventArgs.RecipientAddress; 
                 
                 if (initialRecipientAddress.LocalPart.Contains("+"))
@@ -46,7 +45,7 @@ namespace TransportAgents
                     eventArgs.OriginalRecipient = revisedRecipientAddress;
                 }
 
-                EventLog.AppendLogEntry(String.Format("StripTagOutOfAddress took {0} ms to execute", stopwatch.ElapsedMilliseconds));
+                EventLog.AppendLogEntry(String.Format("TaggingAgent:StripTagOutOfAddress took {0} ms to execute", stopwatch.ElapsedMilliseconds));
                 EventLog.LogDebug(IsDebugEnabled);
 
             }
