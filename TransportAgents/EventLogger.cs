@@ -33,27 +33,27 @@ namespace TransportAgents
             }
         }
 
-        public void LogDebug(string message, bool isDebugEnabled = true)
-        {
-            if (isDebugEnabled)
-            {
-                EventLog.WriteEntry(Source, message, EventLogEntryType.Information);
-            }
-        }
+        //public void LogDebug(string message, bool isDebugEnabled = true)
+        //{
+        //    if (isDebugEnabled)
+        //    {
+        //        EventLog.WriteEntry(Source, message, EventLogEntryType.Information);
+        //    }
+        //}
 
         public void LogDebug(bool isDebugEnabled = true)
         {
             if (isDebugEnabled)
             {
                 EventLog.WriteEntry(Source, EventLogMessage.ToString(), EventLogEntryType.Information);
-                EventLogMessage.Clear();
             }
+            EventLogMessage.Clear();
         }
 
-        public void LogInformation(string message)
-        {
-            EventLog.WriteEntry(Source, message, EventLogEntryType.Information);
-        }
+        //public void LogInformation(string message)
+        //{
+        //    EventLog.WriteEntry(Source, message, EventLogEntryType.Information);
+        //}
 
         public void LogInformation()
         {
@@ -61,10 +61,10 @@ namespace TransportAgents
             EventLogMessage.Clear();
         }
 
-        public void LogWarning(string message)
-        {
-            EventLog.WriteEntry(Source, message, EventLogEntryType.Warning);
-        }
+        //public void LogWarning(string message)
+        //{
+        //    EventLog.WriteEntry(Source, message, EventLogEntryType.Warning);
+        //}
 
         public void LogWarning()
         {
@@ -72,10 +72,10 @@ namespace TransportAgents
             EventLogMessage.Clear();
         }
 
-        public void LogError(string message)
-        {
-            EventLog.WriteEntry(Source, message, EventLogEntryType.Error);
-        }
+        //public void LogError(string message)
+        //{
+        //    EventLog.WriteEntry(Source, message, EventLogEntryType.Error);
+        //}
 
         public void LogError()
         {
@@ -83,10 +83,20 @@ namespace TransportAgents
             EventLogMessage.Clear();
         }
 
-        public void LogException(Exception ex)
-        {
-            EventLog.WriteEntry(Source, ex.ToString(), EventLogEntryType.Error);
-        }
+        //public void LogException(Exception ex)
+        //{
+        //    StringBuilder sb = new StringBuilder();
+        //    sb.AppendLine("--------------------------------------------------------------------------------");
+        //    sb.AppendLine(String.Format("EXCEPTION MESSAGE: {0}", ex.Message));
+        //    sb.AppendLine(String.Format("EXCEPTION HRESULT: {0}", ex.HResult));
+        //    sb.AppendLine(String.Format("EXCEPTION SOURCE: {0}", ex.Source));
+        //    sb.AppendLine(String.Format("EXCEPTION INNER EXCEPTION: {0}", ex.InnerException));
+        //    sb.AppendLine(String.Format("EXCEPTION STRACK: {0}", ex.StackTrace));
+        //    sb.AppendLine("--------------------------------------------------------------------------------");
+        //    sb.AppendLine(ex.ToString());
+        //    sb.AppendLine("--------------------------------------------------------------------------------");
+        //    EventLog.WriteEntry(Source, sb.ToString(), EventLogEntryType.Error);
+        //}
 
         public void LogException()
         {
@@ -117,15 +127,15 @@ namespace TransportAgents
             EventLogMessage.AppendLine(obj.ToString());
         }
 
-        public void ClearLogEntry()
-        {
-            EventLogMessage.Clear();
-        }
+        //public void ClearLogEntry()
+        //{
+        //    EventLogMessage.Clear();
+        //}
 
-        public string GetLogEntry()
-        {
-            return EventLogMessage.ToString();
-        }
+        //public string GetLogEntry()
+        //{
+        //    return EventLogMessage.ToString();
+        //}
 
         ~EventLogger()
         {
@@ -142,9 +152,10 @@ namespace TransportAgents
             if (!String.IsNullOrEmpty(EventLogMessage.ToString()))
             {
                 EventLogMessage.AppendLine("Writing Event on Agent exit");
-                LogInformation(EventLogMessage.ToString());
+                EventLog.WriteEntry(Source, EventLogMessage.ToString(), EventLogEntryType.Information);
                 EventLogMessage.Clear();
             }
+            EventLogMessage = null;
         }
     }
 }
