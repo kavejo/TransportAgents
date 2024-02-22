@@ -33,8 +33,8 @@ namespace TransportAgents
             try
             {
                 Stopwatch stopwatch = Stopwatch.StartNew();
-                EventLog.AppendLogEntry(String.Format("Entering: AutoResponderAgent:OnRoutedMessageGenerateAutoResponse")); 
-                
+                EventLog.AppendLogEntry(String.Format("Entering: AutoResponderAgent:OnRoutedMessageGenerateAutoResponse"));
+
                 string sender = e.MailItem.FromAddress.ToString();
                 string autoResponseSubject = "This email address will be deprecated";
                 string autoResponseBody = "Thank you for your e-mail; this email address will be deprecated and won't receive messages anymore.";

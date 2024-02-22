@@ -49,7 +49,7 @@ namespace TransportAgents
                     TextHeader newHeader = new TextHeader(headerName, headerValue);
                     headers.InsertAfter(newHeader, lastHeader);
                 }
-                
+
                 EventLog.AppendLogEntry(String.Format("HeaderAgent:OnRoutedMessageInsertHeader took {0} ms to execute", stopwatch.ElapsedMilliseconds));
                 EventLog.LogDebug(IsDebugEnabled);
 

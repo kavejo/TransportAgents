@@ -10,7 +10,7 @@ namespace TransportAgents
         private string Source = String.Empty;
         private StringBuilder EventLogMessage = null;
 
-        public EventLogger(string eventSource = "Application") 
+        public EventLogger(string eventSource = "Application")
         {
             EventLogMessage = new StringBuilder();
 

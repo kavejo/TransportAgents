@@ -5,7 +5,6 @@ using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Xml.Linq;
 
 namespace TransportAgents
 {
@@ -162,7 +161,7 @@ namespace TransportAgents
                     {
                         if (recipient.RecipientCategory == RecipientCategory.InDifferentOrganization || recipient.RecipientCategory == RecipientCategory.Unknown)
                         {
-                            externalRecipients++; 
+                            externalRecipients++;
                         }
                     }
                     EventLog.AppendLogEntry(String.Format("There are {0} external recipients", externalRecipients));

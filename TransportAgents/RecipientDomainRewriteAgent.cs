@@ -3,8 +3,6 @@ using Microsoft.Exchange.Data.Transport.Routing;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
-using System.Xml.Linq;
 
 namespace TransportAgents
 {
@@ -25,7 +23,7 @@ namespace TransportAgents
 
         static readonly string oldDomainToDecommission = "contoso.com";
         static readonly string newDomainToUse = "tailspin.com";
-        static readonly List<String> excludedFromRewrite = new List<String>(new String[] { "someone@testdomain.local", "someoneelse@testdomain.local"});
+        static readonly List<String> excludedFromRewrite = new List<String>(new String[] { "someone@testdomain.local", "someoneelse@testdomain.local" });
 
 
         public RecipientDomainRewriteAgent_Agent()
@@ -35,7 +33,7 @@ namespace TransportAgents
 
         void RecipientDomainRewrite_OnSubmittedMessage(SubmittedMessageEventSource source, QueuedMessageEventArgs evtMessage)
         {
-            
+
             Stopwatch stopwatch = Stopwatch.StartNew();
             EventLog.AppendLogEntry(String.Format("Processing message {0} from {1} with subject {2} in RecipientDomainRewriteAgent:RecipientDomainRewrite_OnSubmittedMessage", evtMessage.MailItem.Message.MessageId.ToString(), evtMessage.MailItem.FromAddress.ToString().Trim(), evtMessage.MailItem.Message.Subject.ToString().Trim()));
 

@@ -23,17 +23,17 @@ namespace TransportAgents
         {
             OnRcptCommand += StripTagOutOfAddress;
         }
-    
+
         private void StripTagOutOfAddress(ReceiveCommandEventSource receiveMessageEventSource, RcptCommandEventArgs eventArgs)
         {
 
             try
             {
                 Stopwatch stopwatch = Stopwatch.StartNew();
-                EventLog.AppendLogEntry(String.Format("Entering: TaggingAgent:StripTagOutOfAddress")); 
-                
-                RoutingAddress initialRecipientAddress = eventArgs.RecipientAddress; 
-                
+                EventLog.AppendLogEntry(String.Format("Entering: TaggingAgent:StripTagOutOfAddress"));
+
+                RoutingAddress initialRecipientAddress = eventArgs.RecipientAddress;
+
                 if (initialRecipientAddress.LocalPart.Contains("+"))
                 {
                     int plusIndex = initialRecipientAddress.LocalPart.IndexOf("+");
