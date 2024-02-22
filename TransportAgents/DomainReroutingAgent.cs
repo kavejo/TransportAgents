@@ -50,38 +50,74 @@ namespace TransportAgents
                 EventLog.AppendLogEntry(String.Format("Accessign Registry to check configuration of {0} in DomainReroutingAgent:RetrieveConfiguration", RegistryHive));
 
                 registryPath = Registry.CurrentUser.OpenSubKey(RegistryHive, RegistryKeyPermissionCheck.ReadWriteSubTree, System.Security.AccessControl.RegistryRights.FullControl);
+                bool configurationReviewNecessary = false;
+                bool valueConversionResult = true;
 
                 if (registryPath != null)
                 {
                     EventLog.AppendLogEntry(String.Format("Registry Key {0} esists and contains {1} entries", RegistryHive, registryPath.ValueCount));
-
-                    Boolean.TryParse(registryPath.GetValue(RegistryKeyOverrideRoutingDomainAgentEnabled).ToString(), out OverrideRoutingDomainAgentEnabled);
-                    EventLog.AppendLogEntry(String.Format("The value of {0} is: {1}", RegistryKeyOverrideRoutingDomainAgentEnabled, OverrideRoutingDomainAgentEnabled));
-
-                    Boolean.TryParse(registryPath.GetValue(RegistryKeyOverrideRoutingDomainDebugEnabled).ToString(), out OverrideRoutingDomainDebugEnabled);
-                    EventLog.AppendLogEntry(String.Format("The value of {0} is: {1}", RegistryKeyOverrideRoutingDomainDebugEnabled, OverrideRoutingDomainDebugEnabled));
-
-                    Boolean.TryParse(registryPath.GetValue(RegistryKeyRemoveEmptyHeadersAgentEnabled).ToString(), out RemoveEmptyHeadersAgentEnabled);
-                    EventLog.AppendLogEntry(String.Format("The value of {0} is: {1}", RegistryKeyRemoveEmptyHeadersAgentEnabled, RemoveEmptyHeadersAgentEnabled));
-
-                    Boolean.TryParse(registryPath.GetValue(RegistryKeyRemoveEmptyHeadersDebugEnabled).ToString(), out RemoveEmptyHeadersDebugEnabled);
-                    EventLog.AppendLogEntry(String.Format("The value of {0} is: {1}", RegistryKeyRemoveEmptyHeadersDebugEnabled, RemoveEmptyHeadersDebugEnabled));
-
-                    foreach (string s in (string[])registryPath.GetValue(RegistryKeyEnabledSendersToReroute))
+                    if (registryPath.ValueCount != 5)
                     {
-                        string sender = s.Substring(0, s.IndexOf("|"));
-                        string domain = s.Substring(s.IndexOf("|") + 1);
-                        EventLog.AppendLogEntry(String.Format("Read override {0}:{1} from registry", sender, domain));
+                        configurationReviewNecessary = true;
+                    }
 
-                        if (!SenderOverrides.ContainsKey(sender))
+                    valueConversionResult = Boolean.TryParse(registryPath.GetValue(RegistryKeyOverrideRoutingDomainAgentEnabled).ToString(), out OverrideRoutingDomainAgentEnabled);
+                    EventLog.AppendLogEntry(String.Format("The value of {0} is: {1}. Converting the registry value successfully: {2}", RegistryKeyOverrideRoutingDomainAgentEnabled, OverrideRoutingDomainAgentEnabled, valueConversionResult));
+                    if (valueConversionResult == false)
+                    {
+                        configurationReviewNecessary = true;
+                        EventLog.AppendLogEntry(String.Format("The registry key {0} is missing", RegistryKeyOverrideRoutingDomainAgentEnabled));
+                    }
+
+                    valueConversionResult = Boolean.TryParse(registryPath.GetValue(RegistryKeyOverrideRoutingDomainDebugEnabled).ToString(), out OverrideRoutingDomainDebugEnabled);
+                    EventLog.AppendLogEntry(String.Format("The value of {0} is: {1}. Converting the registry value successfully: {2}", RegistryKeyOverrideRoutingDomainDebugEnabled, OverrideRoutingDomainDebugEnabled, valueConversionResult));
+                    if (valueConversionResult == false)
+                    {
+                        configurationReviewNecessary = true;
+                        EventLog.AppendLogEntry(String.Format("The registry key {0} is missing", RegistryKeyOverrideRoutingDomainDebugEnabled));
+                    }
+
+                    valueConversionResult = Boolean.TryParse(registryPath.GetValue(RegistryKeyRemoveEmptyHeadersAgentEnabled).ToString(), out RemoveEmptyHeadersAgentEnabled);
+                    EventLog.AppendLogEntry(String.Format("The value of {0} is: {1}. Converting the registry value successfully: {2}", RegistryKeyRemoveEmptyHeadersAgentEnabled, RemoveEmptyHeadersAgentEnabled, valueConversionResult));
+                    if (valueConversionResult == false)
+                    {
+                        configurationReviewNecessary = true;
+                        EventLog.AppendLogEntry(String.Format("The registry key {0} is missing", RegistryKeyRemoveEmptyHeadersAgentEnabled));
+                    }
+
+                    valueConversionResult = Boolean.TryParse(registryPath.GetValue(RegistryKeyRemoveEmptyHeadersDebugEnabled).ToString(), out RemoveEmptyHeadersDebugEnabled);
+                    EventLog.AppendLogEntry(String.Format("The value of {0} is: {1}. Converting the registry value successfully: {2}", RegistryKeyRemoveEmptyHeadersDebugEnabled, RemoveEmptyHeadersDebugEnabled, valueConversionResult));
+                    if (valueConversionResult == false)
+                    {
+                        configurationReviewNecessary = true;
+                        EventLog.AppendLogEntry(String.Format("The registry key {0} is missing", RegistryKeyRemoveEmptyHeadersDebugEnabled));
+                    }
+
+                    string[] retrievedOverrides = (string[])registryPath.GetValue(RegistryKeyEnabledSendersToReroute);
+                    if (retrievedOverrides != null && retrievedOverrides.Length > 0)
+                    {
+                        foreach (string s in retrievedOverrides)
                         {
-                            SenderOverrides.Add(sender, domain);
-                            EventLog.AppendLogEntry(String.Format("Added to the list of overrides {0}:{1} to runtime configuration", sender, domain));
+                            string sender = s.Substring(0, s.IndexOf("|"));
+                            string domain = s.Substring(s.IndexOf("|") + 1);
+                            EventLog.AppendLogEntry(String.Format("Read override {0}:{1} from registry", sender, domain));
+
+                            if (!SenderOverrides.ContainsKey(sender))
+                            {
+                                SenderOverrides.Add(sender, domain);
+                                EventLog.AppendLogEntry(String.Format("Added to the list of overrides {0}:{1} to runtime configuration", sender, domain));
+                            }
                         }
+                    }
+                    else
+                    {
+                        configurationReviewNecessary = true;
+                        EventLog.AppendLogEntry(String.Format("The registry key {0} is missing", RegistryKeyEnabledSendersToReroute));
                     }
                 }
                 else
                 {
+                    configurationReviewNecessary = true;
                     EventLog.AppendLogEntry(String.Format("Registry Key {0} does not esist", RegistryHive));
                     Registry.CurrentUser.CreateSubKey(RegistryHive);
                     registryPath = Registry.CurrentUser.OpenSubKey(RegistryHive, RegistryKeyPermissionCheck.ReadWriteSubTree, System.Security.AccessControl.RegistryRights.FullControl);
@@ -95,7 +131,21 @@ namespace TransportAgents
 
                 stopwatch.Stop();
                 EventLog.AppendLogEntry(String.Format("DomainReroutingAgent:RetrieveConfiguration took {0} ms to execute", stopwatch.ElapsedMilliseconds));
-                EventLog.LogDebug(OverrideRoutingDomainDebugEnabled);
+                if(configurationReviewNecessary)
+                {
+                    EventLog.AppendLogEntry(String.Format(@"The configuration in HKEY_CURRENT_USER:\{0} appears incomplete. The following entries should be present.", RegistryHive));
+                    EventLog.AppendLogEntry(String.Format("{0}: {1} of type REG_SZ", RegistryKeyOverrideRoutingDomainAgentEnabled, "True or False"));
+                    EventLog.AppendLogEntry(String.Format("{0}: {1} of type REG_SZ", RegistryKeyOverrideRoutingDomainDebugEnabled, "True or False"));
+                    EventLog.AppendLogEntry(String.Format("{0}: {1} of type REG_SZ", RegistryKeyRemoveEmptyHeadersAgentEnabled, "True or False"));
+                    EventLog.AppendLogEntry(String.Format("{0}: {1} of type REG_SZ", RegistryKeyRemoveEmptyHeadersDebugEnabled, "True or False"));
+                    EventLog.AppendLogEntry(String.Format("{0}: {1} of type REG_MULTI_SZ, one mapping per line", RegistryKeyEnabledSendersToReroute, "<user@domain.com>|<domain.tld>"));
+                    EventLog.LogWarning();
+                }
+                else
+                {
+                    EventLog.LogDebug(OverrideRoutingDomainDebugEnabled);
+                }
+                
 
             }
             catch (Exception ex)
