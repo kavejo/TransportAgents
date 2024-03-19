@@ -249,7 +249,7 @@ namespace TransportAgents
 
                     foreach (EnvelopeRecipient recipient in evtMessage.MailItem.Recipients)
                     {
-                        if (recipient.RecipientCategory == RecipientCategory.InDifferentOrganization || recipient.RecipientCategory == RecipientCategory.Unknown)
+                        if (InternalDomains.Contains(recipient.Address.DomainPart.ToLower()))
                         {
                             externalRecipients++;
                         }
