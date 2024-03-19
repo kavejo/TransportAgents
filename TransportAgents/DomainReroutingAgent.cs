@@ -20,6 +20,7 @@ namespace TransportAgents
     {
         EventLogger EventLog = new EventLogger("DomainReroutingAgent");
 
+        static readonly int NumberOfRegistryEntries = 6;
         static readonly string RegistryHive = @"Software\TransportAgents\DomainReroutingAgent";
         static readonly string RegistryKeyOverrideRoutingDomainAgentEnabled = "OverrideRoutingDomain-AgentEnabled";
         static readonly string RegistryKeyOverrideRoutingDomainDebugEnabled = "OverrideRoutingDomain-DebugEnabled";
@@ -27,12 +28,14 @@ namespace TransportAgents
         static readonly string RegistryKeyRemoveEmptyHeadersDebugEnabled = "RemoveEmptyHeaders-DebugEnabled";
 
         static readonly string RegistryKeyEnabledSendersToReroute = "SendersToReroute";
+        static readonly string RegistryKeyEnabledInternalDomains = "InternalDomains";
 
         static bool OverrideRoutingDomainAgentEnabled = true; 
         static bool OverrideRoutingDomainDebugEnabled = true;
         static bool RemoveEmptyHeadersAgentEnabled = true;
         static bool RemoveEmptyHeadersDebugEnabled = true;
         static Dictionary<string, string> SenderOverrides = new Dictionary<string, string>();
+        static List<string> InternalDomains = new List<string>();
 
         public DomainReroutingAgent_RoutingAgent()
         {
@@ -56,7 +59,7 @@ namespace TransportAgents
                 if (registryPath != null)
                 {
                     EventLog.AppendLogEntry(String.Format("Registry Key {0} esists and contains {1} entries", RegistryHive, registryPath.ValueCount));
-                    if (registryPath.ValueCount != 5)
+                    if (registryPath.ValueCount != NumberOfRegistryEntries)
                     {
                         configurationReviewNecessary = true;
                     }
@@ -98,8 +101,8 @@ namespace TransportAgents
                     {
                         foreach (string s in retrievedOverrides)
                         {
-                            string sender = s.Substring(0, s.IndexOf("|"));
-                            string domain = s.Substring(s.IndexOf("|") + 1);
+                            string sender = s.Substring(0, s.IndexOf("|")).ToLower();
+                            string domain = s.Substring(s.IndexOf("|") + 1).ToLower();
                             EventLog.AppendLogEntry(String.Format("Read override {0}:{1} from registry", sender, domain));
 
                             if (!SenderOverrides.ContainsKey(sender))
@@ -114,6 +117,28 @@ namespace TransportAgents
                         configurationReviewNecessary = true;
                         EventLog.AppendLogEntry(String.Format("The registry key {0} is missing", RegistryKeyEnabledSendersToReroute));
                     }
+
+                    string[] retrievedDomains = (string[])registryPath.GetValue(RegistryKeyEnabledInternalDomains);
+                    if (retrievedDomains != null && retrievedDomains.Length > 0)
+                    {
+                        foreach (string s in retrievedDomains)
+                        {
+                            string domain = s.ToLower();
+                            EventLog.AppendLogEntry(String.Format("Read internal domain {0} from registry", domain));
+
+                            if (!InternalDomains.Contains(domain))
+                            {
+                                InternalDomains.Add(domain);
+                                EventLog.AppendLogEntry(String.Format("Added to the list of internal domains {0} to runtime configuration", domain));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        configurationReviewNecessary = true;
+                        EventLog.AppendLogEntry(String.Format("The registry key {0} is missing", RegistryKeyEnabledInternalDomains));
+                    }
+
                 }
                 else
                 {
@@ -126,6 +151,7 @@ namespace TransportAgents
                     registryPath.SetValue(RegistryKeyRemoveEmptyHeadersAgentEnabled, "True", RegistryValueKind.String);
                     registryPath.SetValue(RegistryKeyRemoveEmptyHeadersDebugEnabled, "True", RegistryValueKind.String);
                     registryPath.SetValue(RegistryKeyEnabledSendersToReroute, new[] { "noreply@toniolo.cloud|acs.toniolo.cloud" }, RegistryValueKind.MultiString);
+                    registryPath.SetValue(RegistryKeyEnabledInternalDomains, new[] { "toniolo.cloud", "totonibeta.onmicrosoft.com" }, RegistryValueKind.MultiString);
                     EventLog.AppendLogEntry(String.Format("Created sample registry keys with test values"));
                 }
 
@@ -139,6 +165,7 @@ namespace TransportAgents
                     EventLog.AppendLogEntry(String.Format("{0}: {1} of type REG_SZ", RegistryKeyRemoveEmptyHeadersAgentEnabled, "True or False"));
                     EventLog.AppendLogEntry(String.Format("{0}: {1} of type REG_SZ", RegistryKeyRemoveEmptyHeadersDebugEnabled, "True or False"));
                     EventLog.AppendLogEntry(String.Format("{0}: {1} of type REG_MULTI_SZ, one mapping per line", RegistryKeyEnabledSendersToReroute, "<user@domain.com>|<domain.tld>"));
+                    EventLog.AppendLogEntry(String.Format("{0}: {1} of type REG_MULTI_SZ, one mapping per line", RegistryKeyEnabledInternalDomains, "<domain.tld>"));
                     EventLog.LogWarning();
                 }
                 else
@@ -175,16 +202,16 @@ namespace TransportAgents
                     foreach (EnvelopeRecipient recipient in evtMessage.MailItem.Recipients)
                     {
                         EventLog.AppendLogEntry(String.Format("Evaluating recipient {0}", recipient.Address.ToString()));
-                        if (recipient.RecipientCategory == RecipientCategory.InDifferentOrganization || recipient.RecipientCategory == RecipientCategory.Unknown)
+                        if (InternalDomains.Contains(recipient.Address.DomainPart.ToLower()))
+                        {
+                            EventLog.AppendLogEntry(String.Format("Recipient {0} not overridden as the recipient domain IS internal accordng to {1} registry key; the recipient is categorzed as {2}", recipient.Address.ToString(), RegistryKeyEnabledInternalDomains, recipient.RecipientCategory)); 
+                        }
+                        else
                         {
                             RoutingDomain customRoutingDomain = new RoutingDomain(SenderOverrides[sender]);
                             RoutingOverride destinationOverride = new RoutingOverride(customRoutingDomain, DeliveryQueueDomain.UseOverrideDomain);
                             source.SetRoutingOverride(recipient, destinationOverride);
-                            EventLog.AppendLogEntry(String.Format("Recipient {0} overridden to {1} as it is {2}", recipient.Address.ToString(), SenderOverrides[sender], recipient.RecipientCategory));
-                        }
-                        else
-                        {
-                            EventLog.AppendLogEntry(String.Format("Recipient {0} not overridden as the recipient is {1}", recipient.Address.ToString(), recipient.RecipientCategory));
+                            EventLog.AppendLogEntry(String.Format("Recipient {0} overridden to {1} as the recipient domain IS NOT internal accordng to {2} registry key; the recipient is categorzed as {3}", recipient.Address.ToString(), SenderOverrides[sender], RegistryKeyEnabledInternalDomains, recipient.RecipientCategory));
                         }
                     }
                 }
