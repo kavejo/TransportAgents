@@ -165,7 +165,7 @@ namespace TransportAgents
                     EventLog.AppendLogEntry(String.Format("{0}: {1} of type REG_SZ", RegistryKeyRemoveEmptyHeadersAgentEnabled, "True or False"));
                     EventLog.AppendLogEntry(String.Format("{0}: {1} of type REG_SZ", RegistryKeyRemoveEmptyHeadersDebugEnabled, "True or False"));
                     EventLog.AppendLogEntry(String.Format("{0}: {1} of type REG_MULTI_SZ, one mapping per line", RegistryKeyEnabledSendersToReroute, "<user@domain.com>|<domain.tld>"));
-                    EventLog.AppendLogEntry(String.Format("{0}: {1} of type REG_MULTI_SZ, one mapping per line", RegistryKeyEnabledInternalDomains, "<domain.tld>"));
+                    EventLog.AppendLogEntry(String.Format("{0}: {1} of type REG_MULTI_SZ, one entry per line", RegistryKeyEnabledInternalDomains, "<domain.tld>"));
                     EventLog.LogWarning();
                 }
                 else
