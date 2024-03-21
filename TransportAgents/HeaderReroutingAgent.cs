@@ -47,7 +47,7 @@ namespace TransportAgents
                     EventLog.AppendLogEntry(String.Format("Rerouting messages as the control header {0} is present", HeaderReroutingAgentTargetName));
                     HeaderReroutingAgentTargetValue = HeaderReroutingAgentTarget.Value.Trim();
 
-                    if (String.IsNullOrEmpty(HeaderReroutingAgentTargetValue) && (Uri.CheckHostName(HeaderReroutingAgentTargetValue) == UriHostNameType.Dns))
+                    if (!String.IsNullOrEmpty(HeaderReroutingAgentTargetValue) && (Uri.CheckHostName(HeaderReroutingAgentTargetValue) == UriHostNameType.Dns))
                     {
                         EventLog.AppendLogEntry(String.Format("Rerouting domain is valid as the header {0} is set to {1}", HeaderReroutingAgentTargetName, HeaderReroutingAgentTargetValue));
 
