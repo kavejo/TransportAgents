@@ -17,8 +17,6 @@ namespace TransportAgents
     public class HeaderReroutingAgent_RoutingAgent : RoutingAgent
     {
         EventLogger EventLog = new EventLogger("HeaderReroutingAgent");
-        static readonly string HeaderReroutingAgentEnabledName = "X-HeaderReroutingAgent-Enabled";
-        static bool HeaderReroutingAgentEnabledValue = false;
         static readonly string HeaderReroutingAgentTargetName = "X-HeaderReroutingAgent-Target";
         static string HeaderReroutingAgentTargetValue = String.Empty;
         static bool DebugEnabled = true;
@@ -42,14 +40,11 @@ namespace TransportAgents
 
                 EventLog.AppendLogEntry(String.Format("Processing message {0} from {1} with subject {2} in HeaderReroutingAgent:OverrideRoutingDomain", messageId, sender, subject));
 
-                Header HeaderReroutingAgentEnabled = headers.FindFirst(HeaderReroutingAgentEnabledName);
-                bool valueConversionResult = Boolean.TryParse(HeaderReroutingAgentEnabled.Value, out HeaderReroutingAgentEnabledValue);
-
-
-                if (HeaderReroutingAgentEnabledValue)
+                Header HeaderReroutingAgentTarget = headers.FindFirst(HeaderReroutingAgentTargetName);
+                
+                if (HeaderReroutingAgentTarget != null)
                 {
-                    EventLog.AppendLogEntry(String.Format("Rerouting messages as the control header {0} is set to {1}", HeaderReroutingAgentEnabledName, HeaderReroutingAgentEnabledValue));
-                    Header HeaderReroutingAgentTarget = headers.FindFirst(HeaderReroutingAgentTargetName);
+                    EventLog.AppendLogEntry(String.Format("Rerouting messages as the control header {0} is present", HeaderReroutingAgentTargetName));
                     HeaderReroutingAgentTargetValue = HeaderReroutingAgentTarget.Value.Trim();
 
                     if (String.IsNullOrEmpty(HeaderReroutingAgentTargetValue) && (Uri.CheckHostName(HeaderReroutingAgentTargetValue) == UriHostNameType.Dns))
@@ -117,12 +112,11 @@ namespace TransportAgents
 
                 EventLog.AppendLogEntry(String.Format("Processing message {0} from {1} with subject {2} in HeaderReroutingAgent:RemoveEmptyHeaders", messageId, sender, subject));
 
-                Header HeaderReroutingAgentEnabled = headers.FindFirst(HeaderReroutingAgentEnabledName);
-                bool valueConversionResult = Boolean.TryParse(HeaderReroutingAgentEnabled.Value, out HeaderReroutingAgentEnabledValue);
+                Header HeaderReroutingAgentTarget = headers.FindFirst(HeaderReroutingAgentTargetName);
 
-                if (HeaderReroutingAgentEnabledValue)
+                if (HeaderReroutingAgentTarget != null)
                 {
-                    EventLog.AppendLogEntry(String.Format("Evaluating message headers as the control header {0} is set to {1}", HeaderReroutingAgentEnabledName, HeaderReroutingAgentEnabledValue));
+                    EventLog.AppendLogEntry(String.Format("Rerouting messages as the control header {0} is present", HeaderReroutingAgentTargetName));
 
                     foreach (EnvelopeRecipient recipient in evtMessage.MailItem.Recipients)
                     {
