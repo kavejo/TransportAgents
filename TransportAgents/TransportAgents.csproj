@@ -55,6 +55,7 @@
     <Compile Include="DomainReroutingAgent.cs" />
     <Compile Include="EventLogger.cs" />
     <Compile Include="HeaderAgent.cs" />
+    <Compile Include="HeaderReroutingAgent.cs" />
     <Compile Include="NDRAgent.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RecipientDomainRewriteAgent.cs" />
