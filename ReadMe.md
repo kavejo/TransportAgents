@@ -1,5 +1,5 @@
 # Transport Agents
-### This repository contains a Sample Transport Agent that implement various functions by leveraging Trasnport Agents in Microsoft Exchange 2019. 
+### This repository contains various Sample Transport Agents, fully functional and tested, that achieve different business needs by leveraging various Trasnport Agents capabiltiies in Microsoft Exchange Server 2019. 
 
 ## Features
 
@@ -16,3 +16,7 @@
 ## Wiki
 
 For detailed information refer to the avaialble [Wiki](https://github.com/kavejo/TransportAgents/wiki)
+
+## Wiki
+
+While this code specifically references Exhcange 2019 DLL's, it can be easily recompiled using Exchange 2013 or 2016 libraries, oiffering backward compatibility.
