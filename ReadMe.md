@@ -17,6 +17,6 @@
 
 For detailed information refer to the avaialble [Wiki](https://github.com/kavejo/TransportAgents/wiki)
 
-## Wiki
+## Note about Exchange Server versions
 
 While this code specifically references Exhcange 2019 DLL's, it can be easily recompiled using Exchange 2013 or 2016 libraries, oiffering backward compatibility.
