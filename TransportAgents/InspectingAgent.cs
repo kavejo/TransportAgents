@@ -70,7 +70,18 @@ namespace TransportAgents
                     EventLog.AppendLogEntry(String.Format("P2 ReplyTo: {0}", recipient.SmtpAddress.ToString().ToLower().Trim()));
 
                 EventLog.AppendLogEntry(String.Format("InspectingAgent:WriteMessageProperitesOnLog took {0} ms to execute", stopwatch.ElapsedMilliseconds));
-                EventLog.LogDebug(DebugEnabled);
+
+                if ( (evtMessage.MailItem.FromAddress.ToString().ToLower().Trim() != evtMessage.MailItem.Message.Sender.SmtpAddress.ToString().ToLower().Trim()) ||
+                     (evtMessage.MailItem.FromAddress.ToString().ToLower().Trim() != evtMessage.MailItem.Message.From.SmtpAddress.ToString().ToLower().Trim()) )
+                {
+                    EventLog.AppendLogEntry("==================== IMPORTANT ====================");
+                    EventLog.AppendLogEntry("Note that the P1 Sender and the P2 Sender mismatch. This can be source of problems");
+                    EventLog.LogWarning();
+                }
+                else
+                {
+                    EventLog.LogDebug(DebugEnabled);
+                }
 
             }
             catch (Exception ex)
