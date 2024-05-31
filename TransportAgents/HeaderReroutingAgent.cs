@@ -1,7 +1,5 @@
 ﻿using Microsoft.Exchange.Data.Mime;
-using Microsoft.Exchange.Data.TextConverters;
 using Microsoft.Exchange.Data.Transport;
-using Microsoft.Exchange.Data.Transport.Email;
 using Microsoft.Exchange.Data.Transport.Routing;
 using System;
 using System.Diagnostics;
