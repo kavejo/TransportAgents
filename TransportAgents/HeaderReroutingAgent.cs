@@ -23,13 +23,15 @@ namespace TransportAgents
         static string HeaderReroutingAgentTargetValue = String.Empty;
         static readonly string HeaderReroutingAgentP1P2MismatchActionName = "X-HeaderReroutingAgent-P1P2MismatchAction";
         static string HeaderReroutingAgentP1P2MismatchActionValue = String.Empty;
-        static List<string> HeadersToRetain = new List<string>() { "From", "To", "Cc", "Bcc", "Subject", "Message-ID", "Content-Type", "Content-Transfer-Encoding", "MIME-Version", HeaderReroutingAgentTargetName, HeaderReroutingAgentP1P2MismatchActionName };
+        static readonly string HeaderReroutingAgentForceP1Name = "X-HeaderReroutingAgent-ForceP1";
+        static string HeaderReroutingAgentForceP1Value = String.Empty;
+        static List<string> HeadersToRetain = new List<string>() { "From", "To", "Cc", "Bcc", "Subject", "Message-ID", "Content-Type", "Content-Transfer-Encoding", "MIME-Version", HeaderReroutingAgentTargetName, HeaderReroutingAgentP1P2MismatchActionName, HeaderReroutingAgentForceP1Name };
         static bool DebugEnabled = true;
 
         public HeaderReroutingAgent_RoutingAgent()
         {
             base.OnResolvedMessage += new ResolvedMessageEventHandler(OverrideRoutingDomain);
-            base.OnRoutedMessage += new RoutedMessageEventHandler(FixP1P2Mismatch);
+            base.OnRoutedMessage += new RoutedMessageEventHandler(OverrideSenderAddress);
             base.OnCategorizedMessage += new CategorizedMessageEventHandler(RemoveAllHeaders);
         }
 
@@ -105,7 +107,7 @@ namespace TransportAgents
 
         }
 
-        void FixP1P2Mismatch(RoutedMessageEventSource source, QueuedMessageEventArgs evtMessage)
+        void OverrideSenderAddress(RoutedMessageEventSource source, QueuedMessageEventArgs evtMessage)
         {
             try
             {
@@ -113,16 +115,18 @@ namespace TransportAgents
                 string messageId = evtMessage.MailItem.Message.MessageId.ToString();
                 string sender = evtMessage.MailItem.FromAddress.ToString().ToLower().Trim();
                 string subject = evtMessage.MailItem.Message.Subject.Trim();
+                string P1Sender = evtMessage.MailItem.FromAddress.ToString();
+                string P2Sender = evtMessage.MailItem.Message.Sender.SmtpAddress;
                 HeaderList headers = evtMessage.MailItem.Message.MimeDocument.RootPart.Headers;
                 Stopwatch stopwatch = Stopwatch.StartNew();
 
-                EventLog.AppendLogEntry(String.Format("Processing message {0} from {1} with subject {2} in HeaderReroutingAgent:FixP1P2Mismatch", messageId, sender, subject));
+                EventLog.AppendLogEntry(String.Format("Processing message {0} from {1} with subject {2} in HeaderReroutingAgent:OverrideSenderAddress", messageId, sender, subject));
 
                 Header HeaderReroutingAgentP1P2MismatchAction = headers.FindFirst(HeaderReroutingAgentP1P2MismatchActionName);
 
                 if (HeaderReroutingAgentP1P2MismatchAction != null)
                 {
-                    EventLog.AppendLogEntry(String.Format("Evaluating P1/P2 Mismatch as the control header {0} is present", HeaderReroutingAgentP1P2MismatchActionName));
+                    EventLog.AppendLogEntry(String.Format("Evaluating P1/P2 Sender Mismatch as the control header {0} is present", HeaderReroutingAgentP1P2MismatchActionName));
                     HeaderReroutingAgentP1P2MismatchActionValue = HeaderReroutingAgentP1P2MismatchAction.Value.Trim().ToUpper();
 
                     if (!String.IsNullOrEmpty(HeaderReroutingAgentP1P2MismatchActionValue) &&
@@ -132,9 +136,6 @@ namespace TransportAgents
                     )
                     {
                         EventLog.AppendLogEntry(String.Format("P1/P2 Mismatch Action is valid as the header {0} is set to {1}", HeaderReroutingAgentP1P2MismatchActionName, HeaderReroutingAgentP1P2MismatchActionValue));
-
-                        string P1Sender = evtMessage.MailItem.FromAddress.ToString();
-                        string P2Sender = evtMessage.MailItem.Message.Sender.SmtpAddress;
 
                         EventLog.AppendLogEntry(String.Format("P1 Sender is set to: {0}", P1Sender));
                         EventLog.AppendLogEntry(String.Format("P2 Sender is set to: {0}", P2Sender));
@@ -167,7 +168,24 @@ namespace TransportAgents
 
                 }
 
-                EventLog.AppendLogEntry(String.Format("HeaderReroutingAgent:FixP1P2Mismatch took {0} ms to execute", stopwatch.ElapsedMilliseconds));
+                Header HeaderReroutingAgentForceP1 = headers.FindFirst(HeaderReroutingAgentForceP1Name);
+
+                if (HeaderReroutingAgentForceP1 != null)
+                {
+                    EventLog.AppendLogEntry(String.Format("Overriding P1 Sender as the control header {0} is present", HeaderReroutingAgentForceP1Name));
+                    HeaderReroutingAgentForceP1Value = HeaderReroutingAgentForceP1.Value.Trim().ToUpper();
+
+                    RoutingAddress newP1 = new RoutingAddress(HeaderReroutingAgentForceP1Value);
+                    EventLog.AppendLogEntry(String.Format("The new P1 Sender to be forced is {0}", newP1.ToString()));
+
+                    EventLog.AppendLogEntry(String.Format("P1 Sender is currently set to: {0}", P1Sender));
+                    EventLog.AppendLogEntry(String.Format("P2 Sender is currently set to: {0}", P2Sender));
+
+                    evtMessage.MailItem.FromAddress = newP1;
+                    EventLog.AppendLogEntry(String.Format("Forced P1 Sender to {0}", evtMessage.MailItem.FromAddress.ToString()));
+                }
+
+                EventLog.AppendLogEntry(String.Format("HeaderReroutingAgent:OverrideSenderAddress took {0} ms to execute", stopwatch.ElapsedMilliseconds));
 
                 if (warningOccurred)
                 {
@@ -181,75 +199,7 @@ namespace TransportAgents
             }
             catch (Exception ex)
             {
-                EventLog.AppendLogEntry("Exception in HeaderReroutingAgent:FixP1P2Mismatch");
-                EventLog.AppendLogEntry(ex);
-                EventLog.LogError();
-            }
-
-            return;
-
-        }
-
-        void RemoveEmptyHeaders(CategorizedMessageEventSource source, QueuedMessageEventArgs evtMessage)
-        {
-            try
-            {
-                string messageId = evtMessage.MailItem.Message.MessageId.ToString();
-                string sender = evtMessage.MailItem.FromAddress.ToString().ToLower().Trim();
-                string subject = evtMessage.MailItem.Message.Subject.Trim();
-                HeaderList headers = evtMessage.MailItem.Message.MimeDocument.RootPart.Headers;
-                int externalRecipients = 0;
-                Stopwatch stopwatch = Stopwatch.StartNew();
-
-                EventLog.AppendLogEntry(String.Format("Processing message {0} from {1} with subject {2} in HeaderReroutingAgent:RemoveEmptyHeaders", messageId, sender, subject));
-
-                Header HeaderReroutingAgentTarget = headers.FindFirst(HeaderReroutingAgentTargetName);
-
-                if (HeaderReroutingAgentTarget != null)
-                {
-                    EventLog.AppendLogEntry(String.Format("Selectively Removing Headers as the control header {0} is present", HeaderReroutingAgentTargetName));
-
-                    foreach (EnvelopeRecipient recipient in evtMessage.MailItem.Recipients)
-                    {
-                        EventLog.AppendLogEntry(String.Format("Evaluating recipient {0}@{1} which is {2}", recipient.Address.LocalPart.ToLower(), recipient.Address.DomainPart.ToLower(), recipient.RecipientCategory));
-                        if (recipient.RecipientCategory != RecipientCategory.InSameOrganization)
-                        {
-                            externalRecipients++;
-                        }
-                    }
-                    EventLog.AppendLogEntry(String.Format("There are {0} external recipient(s)", externalRecipients));
-
-                    if (externalRecipients > 0)
-                    {
-                        EventLog.AppendLogEntry(String.Format("Removing empty headers as there are external recipients"));
-                        foreach (Header header in evtMessage.MailItem.Message.MimeDocument.RootPart.Headers)
-                        {
-                            EventLog.AppendLogEntry(String.Format("Inspecting header {0}: {1}", header.Name, String.IsNullOrEmpty(header.Value) ? String.Empty : header.Value));
-                            if (header.Value == null || header.Value.Length == 0 || String.IsNullOrEmpty(header.Value))
-                            {
-                                if (header.Name.ToLower() != "from" && header.Name.ToLower() != "to" && header.Name.ToLower() != "cc" && header.Name.ToLower() != "bcc")
-                                {
-                                    evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.RemoveChild(header);
-                                    EventLog.AppendLogEntry(String.Format("Header {0} REMOVED", header.Name));
-                                }
-                            }
-                        }
-                    }
-
-                    evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader("X-TransportAgent-Name", "HeaderReroutingAgent"), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
-                    evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader("X-TransportAgent-Creator", "Tommaso Toniolo"), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
-                    evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader("X-TransportAgent-Contact", "https://aka.ms/totoni"), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
-                    EventLog.AppendLogEntry(String.Format("Added Headers of type {0}", "X-TransportAgent-*"));
-
-                }
-
-                EventLog.AppendLogEntry(String.Format("HeaderReroutingAgent:RemoveEmptyHeaders took {0} ms to execute", stopwatch.ElapsedMilliseconds));
-                EventLog.LogDebug(DebugEnabled);
-
-            }
-            catch (Exception ex)
-            {
-                EventLog.AppendLogEntry("Exception in HeaderReroutingAgent:RemoveEmptyHeaders");
+                EventLog.AppendLogEntry("Exception in HeaderReroutingAgent:OverrideSenderAddress");
                 EventLog.AppendLogEntry(ex);
                 EventLog.LogError();
             }
