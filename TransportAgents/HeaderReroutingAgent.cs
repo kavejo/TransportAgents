@@ -218,10 +218,10 @@ namespace TransportAgents
 
                     if (externalRecipients > 0)
                     {
-                        EventLog.AppendLogEntry(String.Format("Removing empty headers as there are extenral recipients"));
+                        EventLog.AppendLogEntry(String.Format("Removing empty headers as there are external recipients"));
                         foreach (Header header in evtMessage.MailItem.Message.MimeDocument.RootPart.Headers)
                         {
-                            EventLog.AppendLogEntry(String.Format("Inspeceting header {0}: {1}", header.Name, String.IsNullOrEmpty(header.Value) ? String.Empty : header.Value));
+                            EventLog.AppendLogEntry(String.Format("Inspecting header {0}: {1}", header.Name, String.IsNullOrEmpty(header.Value) ? String.Empty : header.Value));
                             if (header.Value == null || header.Value.Length == 0 || String.IsNullOrEmpty(header.Value))
                             {
                                 if (header.Name.ToLower() != "from" && header.Name.ToLower() != "to" && header.Name.ToLower() != "cc" && header.Name.ToLower() != "bcc")
