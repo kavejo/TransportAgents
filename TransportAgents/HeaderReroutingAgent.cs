@@ -176,13 +176,21 @@ namespace TransportAgents
                     HeaderReroutingAgentForceP1Value = HeaderReroutingAgentForceP1.Value.Trim().ToUpper();
 
                     RoutingAddress newP1 = new RoutingAddress(HeaderReroutingAgentForceP1Value);
-                    EventLog.AppendLogEntry(String.Format("The new P1 Sender to be forced is {0}", newP1.ToString()));
+                    EventLog.AppendLogEntry(String.Format("The new P1 Sender will be forced is {0}", newP1.ToString()));
 
                     EventLog.AppendLogEntry(String.Format("P1 Sender is currently set to: {0}", P1Sender));
                     EventLog.AppendLogEntry(String.Format("P2 Sender is currently set to: {0}", P2Sender));
 
-                    evtMessage.MailItem.FromAddress = newP1;
-                    EventLog.AppendLogEntry(String.Format("Forced P1 Sender to {0}", evtMessage.MailItem.FromAddress.ToString()));
+                    if (newP1.IsValid == false)
+                    {
+                        EventLog.AppendLogEntry(String.Format("The provided P1 Sender {0} IS INVALID", newP1.ToString()));
+                        warningOccurred = true;
+                    }
+                    else
+                    {
+                        evtMessage.MailItem.FromAddress = newP1;
+                        EventLog.AppendLogEntry(String.Format("Forced P1 Sender to {0}", evtMessage.MailItem.FromAddress.ToString()));
+                    }
                 }
 
                 EventLog.AppendLogEntry(String.Format("HeaderReroutingAgent:OverrideSenderAddress took {0} ms to execute", stopwatch.ElapsedMilliseconds));
