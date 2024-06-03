@@ -1,12 +1,7 @@
-﻿using Microsoft.Exchange.Data.Mime;
-using Microsoft.Exchange.Data.Globalization;
-using Microsoft.Exchange.Data.Transport;
-using Microsoft.Exchange.Data.Transport.Email;
+﻿using Microsoft.Exchange.Data.Transport;
 using Microsoft.Exchange.Data.Transport.Routing;
 using System;
 using System.Diagnostics;
-using System.IO;
-using System.Text;
 
 namespace TransportAgents
 {
