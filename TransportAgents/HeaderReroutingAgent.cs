@@ -1,6 +1,7 @@
 ﻿using Microsoft.Exchange.Data.Mime;
 using Microsoft.Exchange.Data.Transport;
 using Microsoft.Exchange.Data.Transport.Routing;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -25,7 +26,10 @@ namespace TransportAgents
         static string HeaderReroutingAgentP1P2MismatchActionValue = String.Empty;
         static readonly string HeaderReroutingAgentForceP1Name = "X-HeaderReroutingAgent-ForceP1";
         static string HeaderReroutingAgentForceP1Value = String.Empty;
-        static List<string> HeadersToRetain = new List<string>() { "From", "To", "Cc", "Bcc", "Subject", "Message-ID", "Content-Type", "Content-Transfer-Encoding", "MIME-Version", HeaderReroutingAgentTargetName, HeaderReroutingAgentP1P2MismatchActionName, HeaderReroutingAgentForceP1Name };
+        static readonly List<string> HeadersToRetain = new List<string>() { "From", "To", "Cc", "Bcc", "Subject", "Message-ID", "Content-Type", "Content-Transfer-Encoding", "MIME-Version", HeaderReroutingAgentTargetName, HeaderReroutingAgentP1P2MismatchActionName, HeaderReroutingAgentForceP1Name };
+        
+        static readonly string RegistryHive = @"Software\TransportAgents\HeaderReroutingAgent";
+        static readonly string RegistryKeyDebugEnabled = "DebugEnabled";
         static bool DebugEnabled = true;
 
         public HeaderReroutingAgent_RoutingAgent()
@@ -33,6 +37,17 @@ namespace TransportAgents
             base.OnResolvedMessage += new ResolvedMessageEventHandler(OverrideRoutingDomain);
             base.OnRoutedMessage += new RoutedMessageEventHandler(OverrideSenderAddress);
             base.OnCategorizedMessage += new CategorizedMessageEventHandler(RemoveAllHeaders);
+
+            RegistryKey registryPath = Registry.CurrentUser.OpenSubKey(RegistryHive, RegistryKeyPermissionCheck.ReadWriteSubTree, System.Security.AccessControl.RegistryRights.FullControl);
+            if (registryPath != null)
+            {
+                string retrievedDebugEnabled = registryPath.GetValue(RegistryKeyDebugEnabled, Boolean.FalseString).ToString();
+                bool valueConversionResult = Boolean.TryParse(retrievedDebugEnabled, out DebugEnabled);
+            }
+            else
+            {
+                DebugEnabled = false;
+            }
         }
 
         void OverrideRoutingDomain(ResolvedMessageEventSource source, QueuedMessageEventArgs evtMessage)
