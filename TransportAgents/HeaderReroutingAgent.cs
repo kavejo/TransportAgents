@@ -26,7 +26,30 @@ namespace TransportAgents
         static string HeaderReroutingAgentP1P2MismatchActionValue = String.Empty;
         static readonly string HeaderReroutingAgentForceP1Name = "X-HeaderReroutingAgent-ForceP1";
         static string HeaderReroutingAgentForceP1Value = String.Empty;
-        static readonly List<string> HeadersToRetain = new List<string>() { "From", "To", "Cc", "Bcc", "Subject", "Message-ID", "Content-Type", "Content-Transfer-Encoding", "MIME-Version", HeaderReroutingAgentTargetName, HeaderReroutingAgentP1P2MismatchActionName, HeaderReroutingAgentForceP1Name };
+        static readonly List<string> HeadersToRetain = new List<string>() { 
+            "From",
+            "To",
+            "Cc",
+            "Bcc",
+            "Subject",
+            "Message-ID",
+            "Content-Type",
+            "Content-Transfer-Encoding",
+            "MIME-Version",
+            "Return-Path",
+            "X-MS-Exchange-Organization",
+            "X-MS-Exchange-Organization-MessageDirectionality",
+            "X-MS-Exchange-Organization-AuthSource",
+            "X-MS-Exchange-Organization-AuthAs",
+            "X-MS-Exchange-Organization-AuthMechanism",
+            "X-MS-Exchange-Organization-Network-Message-Id",
+            "X-MS-Exchange-CrossTenant-AuthSource",
+            "X-MS-Exchange-CrossTenant-AuthAs",
+            "X-MS-Exchange-CrossTenant-Network-Message-Id",
+            HeaderReroutingAgentTargetName,
+            HeaderReroutingAgentP1P2MismatchActionName,
+            HeaderReroutingAgentForceP1Name
+        };
         
         static readonly string RegistryHive = @"Software\TransportAgents\HeaderReroutingAgent";
         static readonly string RegistryKeyDebugEnabledOverrideRoutingDomain = "DebugEnabled-OverrideRoutingDomain";
