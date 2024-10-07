@@ -29,8 +29,14 @@ namespace TransportAgents
         static readonly List<string> HeadersToRetain = new List<string>() { "From", "To", "Cc", "Bcc", "Subject", "Message-ID", "Content-Type", "Content-Transfer-Encoding", "MIME-Version", HeaderReroutingAgentTargetName, HeaderReroutingAgentP1P2MismatchActionName, HeaderReroutingAgentForceP1Name };
         
         static readonly string RegistryHive = @"Software\TransportAgents\HeaderReroutingAgent";
+        static readonly string RegistryKeyDebugEnabledOverrideRoutingDomain = "DebugEnabled-OverrideRoutingDomain";
+        static readonly string RegistryKeyDebugEnabledOverrideSenderAddress = "DebugEnabled-OverrideSenderAddress";
+        static readonly string RegistryKeyDebugEnabledRemoveAllHeaders = "DebugEnabled-RemoveAllHeaders";
         static readonly string RegistryKeyDebugEnabled = "DebugEnabled";
-        static bool DebugEnabled = true;
+        static bool DebugEnabledOverrideRoutingDomain = false;
+        static bool DebugEnabledOverrideSenderAddress = false;
+        static bool DebugEnabledRemoveAllHeaders = false;
+        static bool DebugEnabled = false;
 
         public HeaderReroutingAgent_RoutingAgent()
         {
@@ -41,12 +47,28 @@ namespace TransportAgents
             RegistryKey registryPath = Registry.CurrentUser.OpenSubKey(RegistryHive, RegistryKeyPermissionCheck.ReadWriteSubTree, System.Security.AccessControl.RegistryRights.FullControl);
             if (registryPath != null)
             {
-                string retrievedDebugEnabled = registryPath.GetValue(RegistryKeyDebugEnabled, Boolean.FalseString).ToString();
-                bool valueConversionResult = Boolean.TryParse(retrievedDebugEnabled, out DebugEnabled);
-            }
-            else
-            {
-                DebugEnabled = false;
+                string registryKeyValue = null;
+                bool valueConversionResult = false;
+
+                registryKeyValue = registryPath.GetValue(RegistryKeyDebugEnabledOverrideRoutingDomain, Boolean.FalseString).ToString();
+                valueConversionResult = Boolean.TryParse(registryKeyValue, out DebugEnabledOverrideRoutingDomain);
+
+                registryKeyValue = registryPath.GetValue(RegistryKeyDebugEnabledOverrideSenderAddress, Boolean.FalseString).ToString();
+                valueConversionResult = Boolean.TryParse(registryKeyValue, out DebugEnabledOverrideSenderAddress);
+                
+                registryKeyValue = registryPath.GetValue(RegistryKeyDebugEnabledRemoveAllHeaders, Boolean.FalseString).ToString();
+                valueConversionResult = Boolean.TryParse(registryKeyValue, out DebugEnabledRemoveAllHeaders);
+
+                registryKeyValue = registryPath.GetValue(RegistryKeyDebugEnabled, Boolean.FalseString).ToString();
+                valueConversionResult = Boolean.TryParse(registryKeyValue, out DebugEnabled);
+
+                if (DebugEnabled == true) 
+                {
+                    DebugEnabledOverrideRoutingDomain = true;
+                    DebugEnabledOverrideSenderAddress = true;
+                    DebugEnabledRemoveAllHeaders = true;
+                }
+
             }
         }
 
@@ -107,7 +129,7 @@ namespace TransportAgents
                 }
                 else
                 {
-                    EventLog.LogDebug(DebugEnabled);
+                    EventLog.LogDebug(DebugEnabledOverrideRoutingDomain);
                 }
 
             }
@@ -216,7 +238,7 @@ namespace TransportAgents
                 }
                 else
                 {
-                    EventLog.LogDebug(DebugEnabled);
+                    EventLog.LogDebug(DebugEnabledOverrideSenderAddress);
                 }
 
             }
@@ -285,7 +307,7 @@ namespace TransportAgents
                 }
 
                 EventLog.AppendLogEntry(String.Format("HeaderReroutingAgent:RemoveAllHeaders took {0} ms to execute", stopwatch.ElapsedMilliseconds));
-                EventLog.LogDebug(DebugEnabled);
+                EventLog.LogDebug(DebugEnabledRemoveAllHeaders);
 
             }
             catch (Exception ex)
