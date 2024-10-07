@@ -20,12 +20,21 @@ namespace TransportAgents
     public class HeaderReroutingAgent_RoutingAgent : RoutingAgent
     {
         EventLogger EventLog = new EventLogger("HeaderReroutingAgent");
+        
         static readonly string HeaderReroutingAgentTargetName = "X-HeaderReroutingAgent-Target";
         static string HeaderReroutingAgentTargetValue = String.Empty;
         static readonly string HeaderReroutingAgentP1P2MismatchActionName = "X-HeaderReroutingAgent-P1P2MismatchAction";
         static string HeaderReroutingAgentP1P2MismatchActionValue = String.Empty;
         static readonly string HeaderReroutingAgentForceP1Name = "X-HeaderReroutingAgent-ForceP1";
         static string HeaderReroutingAgentForceP1Value = String.Empty;
+
+        static readonly string HeaderReroutingAgentName = "X-TransportAgent-Name";
+        static readonly string HeaderReroutingAgentNameValue = "HeaderReroutingAgent";
+        static readonly string HeaderReroutingAgentCreator = "X-TransportAgent-Creator";
+        static readonly string HeaderReroutingAgentCreatorValue = "Tommaso Toniolo";
+        static readonly string HeaderReroutingAgentContact = "X-TransportAgent-Contact";
+        static readonly string HeaderReroutingAgentContactValue = "https://aka.ms/totoni";
+
         static readonly List<string> HeadersToRetain = new List<string>() 
         { 
             "From",
@@ -49,7 +58,10 @@ namespace TransportAgents
             "X-MS-Exchange-CrossTenant-Network-Message-Id",
             HeaderReroutingAgentTargetName,
             HeaderReroutingAgentP1P2MismatchActionName,
-            HeaderReroutingAgentForceP1Name
+            HeaderReroutingAgentForceP1Name,
+            HeaderReroutingAgentName,
+            HeaderReroutingAgentCreator,
+            HeaderReroutingAgentContact
         };
         
         static readonly string RegistryHive = @"Software\TransportAgents\HeaderReroutingAgent";
@@ -323,9 +335,9 @@ namespace TransportAgents
                         }
                     }
 
-                    evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader("X-TransportAgent-Name", "HeaderReroutingAgent"), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
-                    evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader("X-TransportAgent-Creator", "Tommaso Toniolo"), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
-                    evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader("X-TransportAgent-Contact", "https://aka.ms/totoni"), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
+                    evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader(HeaderReroutingAgentName, HeaderReroutingAgentNameValue), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
+                    evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader(HeaderReroutingAgentCreator, HeaderReroutingAgentCreatorValue), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
+                    evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader(HeaderReroutingAgentContact, HeaderReroutingAgentContactValue), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
                     EventLog.AppendLogEntry(String.Format("Added Headers of type {0}", "X-TransportAgent-*"));
 
                 }
