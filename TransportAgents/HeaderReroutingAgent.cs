@@ -26,7 +26,8 @@ namespace TransportAgents
         static string HeaderReroutingAgentP1P2MismatchActionValue = String.Empty;
         static readonly string HeaderReroutingAgentForceP1Name = "X-HeaderReroutingAgent-ForceP1";
         static string HeaderReroutingAgentForceP1Value = String.Empty;
-        static readonly List<string> HeadersToRetain = new List<string>() { 
+        static readonly List<string> HeadersToRetain = new List<string>() 
+        { 
             "From",
             "To",
             "Cc",
