@@ -123,7 +123,7 @@ namespace TransportAgents
 
                 Header HeaderReroutingAgentTarget = headers.FindFirst(HeaderReroutingAgentTargetName);
                 
-                if (HeaderReroutingAgentTarget != null)
+                if (HeaderReroutingAgentTarget != null && evtMessage.MailItem.Message.IsSystemMessage == false)
                 {
                     EventLog.AppendLogEntry(String.Format("Rerouting messages as the control header {0} is present", HeaderReroutingAgentTargetName));
                     HeaderReroutingAgentTargetValue = HeaderReroutingAgentTarget.Value.Trim();
@@ -155,6 +155,17 @@ namespace TransportAgents
                         warningOccurred = true;
                     }
 
+                }
+                else 
+                { 
+                    if (evtMessage.MailItem.Message.IsSystemMessage == true) 
+                    {
+                        EventLog.AppendLogEntry(String.Format("Message has not been processed as IsSystemMessage"));
+                    }
+                    else
+                    {
+                        EventLog.AppendLogEntry(String.Format("Message has not been processed as {0} is not set", HeaderReroutingAgentTargetName));
+                    }
                 }
 
                 EventLog.AppendLogEntry(String.Format("HeaderReroutingAgent:OverrideRoutingDomain took {0} ms to execute", stopwatch.ElapsedMilliseconds));
@@ -197,7 +208,7 @@ namespace TransportAgents
 
                 Header HeaderReroutingAgentP1P2MismatchAction = headers.FindFirst(HeaderReroutingAgentP1P2MismatchActionName);
 
-                if (HeaderReroutingAgentP1P2MismatchAction != null)
+                if (HeaderReroutingAgentP1P2MismatchAction != null && evtMessage.MailItem.Message.IsSystemMessage == false)
                 {
                     EventLog.AppendLogEntry(String.Format("Evaluating P1/P2 Sender Mismatch as the control header {0} is present", HeaderReroutingAgentP1P2MismatchActionName));
                     HeaderReroutingAgentP1P2MismatchActionValue = HeaderReroutingAgentP1P2MismatchAction.Value.Trim().ToUpper();
@@ -240,10 +251,21 @@ namespace TransportAgents
                     }
 
                 }
+                else
+                {
+                    if (evtMessage.MailItem.Message.IsSystemMessage == true)
+                    {
+                        EventLog.AppendLogEntry(String.Format("Message has not been processed as IsSystemMessage"));
+                    }
+                    else
+                    {
+                        EventLog.AppendLogEntry(String.Format("Message has not been processed as {0} is not set", HeaderReroutingAgentP1P2MismatchActionName));
+                    }
+                }
 
                 Header HeaderReroutingAgentForceP1 = headers.FindFirst(HeaderReroutingAgentForceP1Name);
 
-                if (HeaderReroutingAgentForceP1 != null)
+                if (HeaderReroutingAgentForceP1 != null && evtMessage.MailItem.Message.IsSystemMessage == false)
                 {
                     EventLog.AppendLogEntry(String.Format("Overriding P1 Sender as the control header {0} is present", HeaderReroutingAgentForceP1Name));
                     HeaderReroutingAgentForceP1Value = HeaderReroutingAgentForceP1.Value.Trim().ToUpper();
@@ -263,6 +285,17 @@ namespace TransportAgents
                     {
                         evtMessage.MailItem.FromAddress = newP1;
                         EventLog.AppendLogEntry(String.Format("Forced P1 Sender to {0}", evtMessage.MailItem.FromAddress.ToString()));
+                    }
+                }
+                else
+                {
+                    if (evtMessage.MailItem.Message.IsSystemMessage == true)
+                    {
+                        EventLog.AppendLogEntry(String.Format("Message has not been processed as IsSystemMessage"));
+                    }
+                    else
+                    {
+                        EventLog.AppendLogEntry(String.Format("Message has not been processed as {0} is not set", HeaderReroutingAgentForceP1Name));
                     }
                 }
 
@@ -304,7 +337,7 @@ namespace TransportAgents
 
                 Header HeaderReroutingAgentTarget = headers.FindFirst(HeaderReroutingAgentTargetName);
 
-                if (HeaderReroutingAgentTarget != null)
+                if (HeaderReroutingAgentTarget != null && evtMessage.MailItem.Message.IsSystemMessage == false)
                 {
                     EventLog.AppendLogEntry(String.Format("Removing All Headers as the control header {0} is present", HeaderReroutingAgentTargetName));
 
@@ -340,6 +373,17 @@ namespace TransportAgents
                     evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader(HeaderReroutingAgentContact, HeaderReroutingAgentContactValue), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
                     EventLog.AppendLogEntry(String.Format("Added Headers of type {0}", "X-TransportAgent-*"));
 
+                }
+                else
+                {
+                    if (evtMessage.MailItem.Message.IsSystemMessage == true)
+                    {
+                        EventLog.AppendLogEntry(String.Format("Message has not been processed as IsSystemMessage"));
+                    }
+                    else
+                    {
+                        EventLog.AppendLogEntry(String.Format("Message has not been processed as {0} is not set", HeaderReroutingAgentTargetName));
+                    }
                 }
 
                 EventLog.AppendLogEntry(String.Format("HeaderReroutingAgent:RemoveAllHeaders took {0} ms to execute", stopwatch.ElapsedMilliseconds));
