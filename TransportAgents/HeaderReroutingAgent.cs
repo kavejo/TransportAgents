@@ -122,8 +122,9 @@ namespace TransportAgents
                 EventLog.AppendLogEntry(String.Format("Processing message {0} from {1} with subject {2} in HeaderReroutingAgent:OverrideRoutingDomain", messageId, sender, subject));
 
                 Header HeaderReroutingAgentTarget = headers.FindFirst(HeaderReroutingAgentTargetName);
-                
-                if (HeaderReroutingAgentTarget != null && evtMessage.MailItem.Message.IsSystemMessage == false)
+                Header LoopPreventionHeader = headers.FindFirst(HeaderReroutingAgentName);
+
+                if (HeaderReroutingAgentTarget != null && evtMessage.MailItem.Message.IsSystemMessage == false && LoopPreventionHeader == null)
                 {
                     EventLog.AppendLogEntry(String.Format("Rerouting messages as the control header {0} is present", HeaderReroutingAgentTargetName));
                     HeaderReroutingAgentTargetValue = HeaderReroutingAgentTarget.Value.Trim();
@@ -161,6 +162,12 @@ namespace TransportAgents
                     if (evtMessage.MailItem.Message.IsSystemMessage == true) 
                     {
                         EventLog.AppendLogEntry(String.Format("Message has not been processed as IsSystemMessage"));
+                    }
+                    else if (LoopPreventionHeader != null)
+                    {
+                        EventLog.AppendLogEntry(String.Format("Message has not been processed as {0} is already present", LoopPreventionHeader.Name));
+                        EventLog.AppendLogEntry(String.Format("This might mean there is a mail LOOP. Trace the message carefully."));
+                        warningOccurred = true;
                     }
                     else
                     {
@@ -207,8 +214,9 @@ namespace TransportAgents
                 EventLog.AppendLogEntry(String.Format("Processing message {0} from {1} with subject {2} in HeaderReroutingAgent:OverrideSenderAddress", messageId, sender, subject));
 
                 Header HeaderReroutingAgentP1P2MismatchAction = headers.FindFirst(HeaderReroutingAgentP1P2MismatchActionName);
+                Header LoopPreventionHeader = headers.FindFirst(HeaderReroutingAgentName);
 
-                if (HeaderReroutingAgentP1P2MismatchAction != null && evtMessage.MailItem.Message.IsSystemMessage == false)
+                if (HeaderReroutingAgentP1P2MismatchAction != null && evtMessage.MailItem.Message.IsSystemMessage == false && LoopPreventionHeader == null)
                 {
                     EventLog.AppendLogEntry(String.Format("Evaluating P1/P2 Sender Mismatch as the control header {0} is present", HeaderReroutingAgentP1P2MismatchActionName));
                     HeaderReroutingAgentP1P2MismatchActionValue = HeaderReroutingAgentP1P2MismatchAction.Value.Trim().ToUpper();
@@ -257,6 +265,12 @@ namespace TransportAgents
                     {
                         EventLog.AppendLogEntry(String.Format("Message has not been processed as IsSystemMessage"));
                     }
+                    else if (LoopPreventionHeader != null)
+                    {
+                        EventLog.AppendLogEntry(String.Format("Message has not been processed as {0} is already present", LoopPreventionHeader.Name));
+                        EventLog.AppendLogEntry(String.Format("This might mean there is a mail LOOP. Trace the message carefully."));
+                        warningOccurred = true;
+                    }
                     else
                     {
                         EventLog.AppendLogEntry(String.Format("Message has not been processed as {0} is not set", HeaderReroutingAgentP1P2MismatchActionName));
@@ -265,7 +279,7 @@ namespace TransportAgents
 
                 Header HeaderReroutingAgentForceP1 = headers.FindFirst(HeaderReroutingAgentForceP1Name);
 
-                if (HeaderReroutingAgentForceP1 != null && evtMessage.MailItem.Message.IsSystemMessage == false)
+                if (HeaderReroutingAgentForceP1 != null && evtMessage.MailItem.Message.IsSystemMessage == false && LoopPreventionHeader == null)
                 {
                     EventLog.AppendLogEntry(String.Format("Overriding P1 Sender as the control header {0} is present", HeaderReroutingAgentForceP1Name));
                     HeaderReroutingAgentForceP1Value = HeaderReroutingAgentForceP1.Value.Trim().ToUpper();
@@ -292,6 +306,12 @@ namespace TransportAgents
                     if (evtMessage.MailItem.Message.IsSystemMessage == true)
                     {
                         EventLog.AppendLogEntry(String.Format("Message has not been processed as IsSystemMessage"));
+                    }
+                    else if (LoopPreventionHeader != null)
+                    {
+                        EventLog.AppendLogEntry(String.Format("Message has not been processed as {0} is already present", LoopPreventionHeader.Name));
+                        EventLog.AppendLogEntry(String.Format("This might mean there is a mail LOOP. Trace the message carefully."));
+                        warningOccurred = true;
                     }
                     else
                     {
@@ -326,6 +346,7 @@ namespace TransportAgents
         {
             try
             {
+                bool warningOccurred = false; 
                 string messageId = evtMessage.MailItem.Message.MessageId.ToString();
                 string sender = evtMessage.MailItem.FromAddress.ToString().ToLower().Trim();
                 string subject = evtMessage.MailItem.Message.Subject.Trim();
@@ -336,8 +357,9 @@ namespace TransportAgents
                 EventLog.AppendLogEntry(String.Format("Processing message {0} from {1} with subject {2} in HeaderReroutingAgent:RemoveAllHeaders", messageId, sender, subject));
 
                 Header HeaderReroutingAgentTarget = headers.FindFirst(HeaderReroutingAgentTargetName);
+                Header LoopPreventionHeader = headers.FindFirst(HeaderReroutingAgentName);
 
-                if (HeaderReroutingAgentTarget != null && evtMessage.MailItem.Message.IsSystemMessage == false)
+                if (HeaderReroutingAgentTarget != null && evtMessage.MailItem.Message.IsSystemMessage == false && LoopPreventionHeader == null)
                 {
                     EventLog.AppendLogEntry(String.Format("Removing All Headers as the control header {0} is present", HeaderReroutingAgentTargetName));
 
@@ -380,6 +402,12 @@ namespace TransportAgents
                     {
                         EventLog.AppendLogEntry(String.Format("Message has not been processed as IsSystemMessage"));
                     }
+                    else if (LoopPreventionHeader != null)
+                    {
+                        EventLog.AppendLogEntry(String.Format("Message has not been processed as {0} is already present", LoopPreventionHeader.Name));
+                        EventLog.AppendLogEntry(String.Format("This might mean there is a mail LOOP. Trace the message carefully."));
+                        warningOccurred = true;
+                    }
                     else
                     {
                         EventLog.AppendLogEntry(String.Format("Message has not been processed as {0} is not set", HeaderReroutingAgentTargetName));
@@ -387,7 +415,15 @@ namespace TransportAgents
                 }
 
                 EventLog.AppendLogEntry(String.Format("HeaderReroutingAgent:RemoveAllHeaders took {0} ms to execute", stopwatch.ElapsedMilliseconds));
-                EventLog.LogDebug(DebugEnabledRemoveAllHeaders);
+
+                if (warningOccurred)
+                {
+                    EventLog.LogWarning();
+                }
+                else
+                {
+                    EventLog.LogDebug(DebugEnabledRemoveAllHeaders);
+                }
 
             }
             catch (Exception ex)
