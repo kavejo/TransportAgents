@@ -75,7 +75,7 @@ namespace TransportAgents
         {
             base.OnResolvedMessage += new ResolvedMessageEventHandler(OverrideRoutingDomain);
             base.OnRoutedMessage += new RoutedMessageEventHandler(OverrideSenderAddress);
-            base.OnCategorizedMessage += new CategorizedMessageEventHandler(RemoveAllHeaders);
+            base.OnCategorizedMessage += new CategorizedMessageEventHandler(RemoveUnnecessaryHeaders);
 
             RegistryKey registryPath = Registry.CurrentUser.OpenSubKey(RegistryHive, RegistryKeyPermissionCheck.ReadWriteSubTree, System.Security.AccessControl.RegistryRights.FullControl);
             if (registryPath != null)
@@ -339,7 +339,7 @@ namespace TransportAgents
 
         }
 
-        void RemoveAllHeaders(CategorizedMessageEventSource source, QueuedMessageEventArgs evtMessage)
+        void RemoveUnnecessaryHeaders(CategorizedMessageEventSource source, QueuedMessageEventArgs evtMessage)
         {
             try
             {
