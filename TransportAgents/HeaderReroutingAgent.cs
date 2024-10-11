@@ -387,6 +387,7 @@ namespace TransportAgents
                                 evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader(TempHeaderName, header.Value), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
                                 evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.RemoveChild(header);
                                 EventLog.AppendLogEntry(String.Format("MOVED header {0} to {1} with value: {2}", header.Name, TempHeaderName, String.IsNullOrEmpty(header.Value) ? String.Empty : header.Value));
+                                MailHops++;
                             }
                             else if (header.Name.ToLower() == "x-ms-exchange-organization-rules-execution-history")
                             {
