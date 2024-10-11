@@ -371,7 +371,11 @@ namespace TransportAgents
                     }
 
                     EventLog.AppendLogEntry(String.Format("There are {0} external recipient(s)", externalRecipients));
- 
+                    Dictionary<string, string> HeadersToInsert = new Dictionary<string, string>();
+                    HeadersToInsert.Add(HeaderReroutingAgentName, HeaderReroutingAgentNameValue);
+                    HeadersToInsert.Add(HeaderReroutingAgentCreator, HeaderReroutingAgentCreatorValue);
+                    HeadersToInsert.Add(HeaderReroutingAgentContact, HeaderReroutingAgentContactValue);
+
                     if (externalRecipients > 0)
                     {
                         EventLog.AppendLogEntry(String.Format("Removing unnecessary or incompatible headers as there are external recipients"));
@@ -387,19 +391,14 @@ namespace TransportAgents
                             {
                                 if (header.Name.ToLower() == "received")
                                 {
-                                    
-
                                     try
                                     {
-                                        string TempHeaderName = String.Format("X-TransportAgent-ProcessHop-{0:000}", MailHops);
                                         Regex RgxFrom = new Regex(@"(?<=from ).*(?= by)");
                                         Regex RgxBy = new Regex(@"(?<=by ).*(?=with)");
-                                        string TempHeaderValue = String.Format("{0} by {1}", RgxFrom.Match(header.Value), RgxBy.Match(header.Value));
-                                        evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader(TempHeaderName, TempHeaderValue), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
+                                        HeadersToInsert.Add(String.Format("X-TransportAgent-ProcessHop-{0:000}", MailHops), String.Format("{0} by {1}", RgxFrom.Match(header.Value), RgxBy.Match(header.Value)));
                                         MailHops++;
-                                        EventLog.AppendLogEntry(String.Format("ADDED header {0}: {1}", TempHeaderName, String.IsNullOrEmpty(TempHeaderValue) ? String.Empty : TempHeaderValue));
                                     }
-                                    catch (Exception ex) 
+                                    catch 
                                     {
                                         EventLog.AppendLogEntry("Exception in Received-header Regex-parsing. Gracefully ignoring the same as it's a non-blocking one");
                                     }
@@ -408,9 +407,7 @@ namespace TransportAgents
 
                                 if (header.Name.ToLower() == "x-ms-exchange-organization-rules-execution-history")
                                 {
-                                    string TempHeaderName = String.Format("X-TransportAgent-ProcessRules");
-                                    evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader(TempHeaderName, header.Value), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
-                                    EventLog.AppendLogEntry(String.Format("ADDED header {0}: {1}", TempHeaderName, String.IsNullOrEmpty(header.Value) ? String.Empty : header.Value));
+                                    HeadersToInsert.Add(String.Format("X-TransportAgent-ProcessRules"), header.Value);
                                 }
 
                                 evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.RemoveChild(header);
@@ -419,11 +416,11 @@ namespace TransportAgents
                         }
                     }
 
-                    EventLog.AppendLogEntry(String.Format("Adding Headers of type {0}", "X-TransportAgent-*"));
-                    evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader(HeaderReroutingAgentName, HeaderReroutingAgentNameValue), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
-                    evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader(HeaderReroutingAgentCreator, HeaderReroutingAgentCreatorValue), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
-                    evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader(HeaderReroutingAgentContact, HeaderReroutingAgentContactValue), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
-                    EventLog.AppendLogEntry(String.Format("Headers of type {0} have been added", "X-TransportAgent-*"));
+                    foreach (var newHeader in HeadersToInsert)
+                    {
+                        evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader(newHeader.Key, newHeader.Value), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
+                        EventLog.AppendLogEntry(String.Format("ADDED header {0}: {1}", newHeader.Key, String.IsNullOrEmpty(newHeader.Value) ? String.Empty : newHeader.Value));
+                    }
 
                 }
                 else
