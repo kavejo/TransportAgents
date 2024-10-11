@@ -351,14 +351,14 @@ namespace TransportAgents
                 int externalRecipients = 0;
                 Stopwatch stopwatch = Stopwatch.StartNew();
 
-                EventLog.AppendLogEntry(String.Format("Processing message {0} from {1} with subject {2} in HeaderReroutingAgent:RemoveAllHeaders", messageId, sender, subject));
+                EventLog.AppendLogEntry(String.Format("Processing message {0} from {1} with subject {2} in HeaderReroutingAgent:RemoveUnnecessaryHeaders", messageId, sender, subject));
 
                 Header HeaderReroutingAgentTarget = headers.FindFirst(HeaderReroutingAgentTargetName);
                 Header LoopPreventionHeader = headers.FindFirst(HeaderReroutingAgentName);
 
                 if (HeaderReroutingAgentTarget != null && evtMessage.MailItem.Message.IsSystemMessage == false && LoopPreventionHeader == null)
                 {
-                    EventLog.AppendLogEntry(String.Format("Removing All Headers as the control header {0} is present", HeaderReroutingAgentTargetName));
+                    EventLog.AppendLogEntry(String.Format("Removing Unnecessary Headers as the control header {0} is present", HeaderReroutingAgentTargetName));
 
                     foreach (EnvelopeRecipient recipient in evtMessage.MailItem.Recipients)
                     {
@@ -368,16 +368,32 @@ namespace TransportAgents
                             externalRecipients++;
                         }
                     }
+
                     EventLog.AppendLogEntry(String.Format("There are {0} external recipient(s)", externalRecipients));
+                    int MailHops = 1;
 
                     if (externalRecipients > 0)
                     {
-                        EventLog.AppendLogEntry(String.Format("Removing all headers as there are external recipients"));
+                        EventLog.AppendLogEntry(String.Format("Removing unnecessary or incompatible headers as there are external recipients"));
                         foreach (Header header in evtMessage.MailItem.Message.MimeDocument.RootPart.Headers)
                         {
-                            if (HeadersToRetain.Contains( header.Name.ToLower(), StringComparer.OrdinalIgnoreCase) )
+                            if (HeadersToRetain.Contains(header.Name.ToLower(), StringComparer.OrdinalIgnoreCase))
                             {
                                 EventLog.AppendLogEntry(String.Format("KEPT header {0}: {1}", header.Name, String.IsNullOrEmpty(header.Value) ? String.Empty : header.Value));
+                            }
+                            else if (header.Name.ToLower() == "received")
+                            {
+                                string TempHeaderName = String.Format("X-TransportAgent-ProcessHop-{0:000}", MailHops);
+                                evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader(TempHeaderName, header.Value), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
+                                evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.RemoveChild(header);
+                                EventLog.AppendLogEntry(String.Format("MOVED header {0} to {1} with value: {2}", header.Name, TempHeaderName, String.IsNullOrEmpty(header.Value) ? String.Empty : header.Value));
+                            }
+                            else if (header.Name.ToLower() == "x-ms-exchange-organization-rules-execution-history")
+                            {
+                                string TempHeaderName = String.Format("X-TransportAgent-ProcessRules");
+                                evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader(TempHeaderName, header.Value), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
+                                evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.RemoveChild(header);
+                                EventLog.AppendLogEntry(String.Format("MOVED header {0} to {1} with value: {2}", header.Name, TempHeaderName, String.IsNullOrEmpty(header.Value) ? String.Empty : header.Value));
                             }
                             else
                             {
@@ -387,10 +403,11 @@ namespace TransportAgents
                         }
                     }
 
+                    EventLog.AppendLogEntry(String.Format("Adding Headers of type {0}", "X-TransportAgent-*"));
                     evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader(HeaderReroutingAgentName, HeaderReroutingAgentNameValue), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
                     evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader(HeaderReroutingAgentCreator, HeaderReroutingAgentCreatorValue), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
                     evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader(HeaderReroutingAgentContact, HeaderReroutingAgentContactValue), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
-                    EventLog.AppendLogEntry(String.Format("Added Headers of type {0}", "X-TransportAgent-*"));
+                    EventLog.AppendLogEntry(String.Format("Headers of type {0} have been added", "X-TransportAgent-*"));
 
                 }
                 else
@@ -411,7 +428,7 @@ namespace TransportAgents
                     }
                 }
 
-                EventLog.AppendLogEntry(String.Format("HeaderReroutingAgent:RemoveAllHeaders took {0} ms to execute", stopwatch.ElapsedMilliseconds));
+                EventLog.AppendLogEntry(String.Format("HeaderReroutingAgent:RemoveUnnecessaryHeaders took {0} ms to execute", stopwatch.ElapsedMilliseconds));
 
                 if (warningOccurred)
                 {
@@ -425,7 +442,7 @@ namespace TransportAgents
             }
             catch (Exception ex)
             {
-                EventLog.AppendLogEntry("Exception in HeaderReroutingAgent:RemoveAllHeaders");
+                EventLog.AppendLogEntry("Exception in HeaderReroutingAgent:RemoveUnnecessaryHeaders");
                 EventLog.AppendLogEntry(ex);
                 EventLog.LogError();
             }
