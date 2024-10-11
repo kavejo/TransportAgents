@@ -20,10 +20,10 @@ namespace TransportAgents
 
         public InspectingAgent_RoutingAgent()
         {
-            base.OnResolvedMessage += new ResolvedMessageEventHandler(WriteMessageProperitesOnLog);
+            base.OnCategorizedMessage += new CategorizedMessageEventHandler(WriteMessageProperitesOnLog);
         }
 
-        void WriteMessageProperitesOnLog(ResolvedMessageEventSource source, QueuedMessageEventArgs evtMessage)
+        void WriteMessageProperitesOnLog(CategorizedMessageEventSource source, QueuedMessageEventArgs evtMessage)
         {
             try
             {
