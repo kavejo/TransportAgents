@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace TransportAgents
 {
@@ -370,34 +371,48 @@ namespace TransportAgents
                     }
 
                     EventLog.AppendLogEntry(String.Format("There are {0} external recipient(s)", externalRecipients));
-                    int MailHops = 1;
-
+ 
                     if (externalRecipients > 0)
                     {
                         EventLog.AppendLogEntry(String.Format("Removing unnecessary or incompatible headers as there are external recipients"));
+                        int MailHops = 1;
+
                         foreach (Header header in evtMessage.MailItem.Message.MimeDocument.RootPart.Headers)
                         {
                             if (HeadersToRetain.Contains(header.Name.ToLower(), StringComparer.OrdinalIgnoreCase))
                             {
                                 EventLog.AppendLogEntry(String.Format("KEPT header {0}: {1}", header.Name, String.IsNullOrEmpty(header.Value) ? String.Empty : header.Value));
                             }
-                            else if (header.Name.ToLower() == "received")
-                            {
-                                string TempHeaderName = String.Format("X-TransportAgent-ProcessHop-{0:000}", MailHops);
-                                evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader(TempHeaderName, header.Value), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
-                                evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.RemoveChild(header);
-                                EventLog.AppendLogEntry(String.Format("MOVED header {0} to {1} with value: {2}", header.Name, TempHeaderName, String.IsNullOrEmpty(header.Value) ? String.Empty : header.Value));
-                                MailHops++;
-                            }
-                            else if (header.Name.ToLower() == "x-ms-exchange-organization-rules-execution-history")
-                            {
-                                string TempHeaderName = String.Format("X-TransportAgent-ProcessRules");
-                                evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader(TempHeaderName, header.Value), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
-                                evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.RemoveChild(header);
-                                EventLog.AppendLogEntry(String.Format("MOVED header {0} to {1} with value: {2}", header.Name, TempHeaderName, String.IsNullOrEmpty(header.Value) ? String.Empty : header.Value));
-                            }
                             else
                             {
+                                if (header.Name.ToLower() == "received")
+                                {
+                                    
+
+                                    try
+                                    {
+                                        string TempHeaderName = String.Format("X-TransportAgent-ProcessHop-{0:000}", MailHops);
+                                        Regex RgxFrom = new Regex(@"(?<=from ).*(?= by)");
+                                        Regex RgxBy = new Regex(@"(?<=by ).*(?=with)");
+                                        string TempHeaderValue = String.Format("{0} by {1}", RgxFrom.Match(header.Value), RgxBy.Match(header.Value));
+                                        evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader(TempHeaderName, TempHeaderValue), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
+                                        MailHops++;
+                                        EventLog.AppendLogEntry(String.Format("ADDED header {0}: {1}", TempHeaderName, String.IsNullOrEmpty(TempHeaderValue) ? String.Empty : TempHeaderValue));
+                                    }
+                                    catch (Exception ex) 
+                                    {
+                                        EventLog.AppendLogEntry("Exception in Received-header Regex-parsing. Gracefully ignoring the same as it's a non-blocking one");
+                                    }
+
+                                }
+
+                                if (header.Name.ToLower() == "x-ms-exchange-organization-rules-execution-history")
+                                {
+                                    string TempHeaderName = String.Format("X-TransportAgent-ProcessRules");
+                                    evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.InsertAfter(new TextHeader(TempHeaderName, header.Value), evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.LastChild);
+                                    EventLog.AppendLogEntry(String.Format("ADDED header {0}: {1}", TempHeaderName, String.IsNullOrEmpty(header.Value) ? String.Empty : header.Value));
+                                }
+
                                 evtMessage.MailItem.Message.MimeDocument.RootPart.Headers.RemoveChild(header);
                                 EventLog.AppendLogEntry(String.Format("REMOVED header {0}: {1}", header.Name, String.IsNullOrEmpty(header.Value) ? String.Empty : header.Value));
                             }
