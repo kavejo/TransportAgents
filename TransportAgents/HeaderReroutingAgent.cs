@@ -10,11 +10,12 @@ using System.Text.RegularExpressions;
 
 namespace TransportAgents
 {
+
     public  class HeaderReroutingAgent : RoutingAgentFactory
     {
         public override RoutingAgent CreateAgent(SmtpServer server)
         {
-            return new HeaderReroutingAgent_RoutingAgent();
+            return new HeaderReroutingAgent_RoutingAgent(server.AcceptedDomains, server.AddressBook);
         }
     }
 
@@ -71,8 +72,10 @@ namespace TransportAgents
         static bool DebugEnabledOverrideSenderAddress = false;
         static bool DebugEnabledRemoveAllHeaders = false;
         static bool DebugEnabled = false;
+        static AcceptedDomainCollection acceptedDomains;
+        static AddressBook addressBook;
 
-        public HeaderReroutingAgent_RoutingAgent()
+        public HeaderReroutingAgent_RoutingAgent(AcceptedDomainCollection serverAcceptedDomains, AddressBook serverAddressBook)
         {
             base.OnResolvedMessage += new ResolvedMessageEventHandler(OverrideRoutingDomain);
             base.OnRoutedMessage += new RoutedMessageEventHandler(OverrideSenderAddress);
@@ -104,6 +107,10 @@ namespace TransportAgents
                 }
 
             }
+
+            acceptedDomains = serverAcceptedDomains;
+            addressBook = serverAddressBook;
+
         }
 
         void OverrideRoutingDomain(ResolvedMessageEventSource source, QueuedMessageEventArgs evtMessage)
@@ -133,17 +140,24 @@ namespace TransportAgents
 
                         foreach (EnvelopeRecipient recipient in evtMessage.MailItem.Recipients)
                         {
-                            EventLog.AppendLogEntry(String.Format("Evaluating recipient {0}", recipient.Address.ToString()));
-                            if (recipient.RecipientCategory == RecipientCategory.InSameOrganization)
+                            EventLog.AppendLogEntry(String.Format("Evaluating recipient {0} which in Transport is categirized as {1}", recipient.Address.ToString(), recipient.RecipientCategory));
+                            AcceptedDomain resolvedDomain = acceptedDomains.Find(recipient.Address.DomainPart.ToString());
+                            EventLog.AppendLogEntry(String.Format("The check of whether the recipient domain is an Accepted Domain has returned {0}", resolvedDomain == null ? "NULL" : resolvedDomain.IsInCorporation.ToString()));
+                            AddressBookEntry resolvedRecipient = addressBook.Find(recipient.Address);
+                            EventLog.AppendLogEntry(String.Format("The check of whether the recipient in the Address Book has returned a type of {0}", resolvedRecipient == null ? "NULL" : resolvedRecipient.RecipientType.ToString()));
+                            //bool isRecipientInternal = addressBook.IsInternal(recipient.Address);
+                            //EventLog.AppendLogEntry(String.Format("The check of whether the recipient in Internal has returned {0}", isRecipientInternal));
+
+                            if (resolvedDomain != null)
                             {
-                                EventLog.AppendLogEntry(String.Format("Recipient {0} not overridden as the recipient domain IS internal; the recipient is categorzed as {1}", recipient.Address.ToString(), recipient.RecipientCategory));
+                                EventLog.AppendLogEntry(String.Format("Recipient {0} not overridden as the recipient domain IS AN ACCEPTED DOMAIN; the recipient is categorzed by Transport as {1}", recipient.Address.ToString(), recipient.RecipientCategory));
                             }
                             else
                             {
                                 RoutingDomain customRoutingDomain = new RoutingDomain(HeaderReroutingAgentTargetValue);
                                 RoutingOverride destinationOverride = new RoutingOverride(customRoutingDomain, DeliveryQueueDomain.UseOverrideDomain);
                                 source.SetRoutingOverride(recipient, destinationOverride);
-                                EventLog.AppendLogEntry(String.Format("Recipient {0} overridden to {1} as the recipient domain IS NOT internal; the recipient is categorzed as {2}", recipient.Address.ToString(), HeaderReroutingAgentTargetValue, recipient.RecipientCategory));
+                                EventLog.AppendLogEntry(String.Format("Recipient {0} overridden to {1} as the recipient domain IS NOT AN ACCEPTED DOMAIN; the recipient is categorzed by Transport as {2}", recipient.Address.ToString(), HeaderReroutingAgentTargetValue, recipient.RecipientCategory));
                             }
                         }
                     }
@@ -363,9 +377,17 @@ namespace TransportAgents
 
                     foreach (EnvelopeRecipient recipient in evtMessage.MailItem.Recipients)
                     {
-                        EventLog.AppendLogEntry(String.Format("Evaluating recipient {0}@{1} which is {2}", recipient.Address.LocalPart.ToLower(), recipient.Address.DomainPart.ToLower(), recipient.RecipientCategory));
-                        if (recipient.RecipientCategory != RecipientCategory.InSameOrganization)
+                        EventLog.AppendLogEntry(String.Format("Evaluating recipient {0} which in Transport is categirized as {1}", recipient.Address.ToString(), recipient.RecipientCategory));
+                        AcceptedDomain resolvedDomain = acceptedDomains.Find(recipient.Address.DomainPart.ToString());
+                        EventLog.AppendLogEntry(String.Format("The check of whether the recipient domain is an Accepted Domain has returned {0}", resolvedDomain == null ? "NULL" : resolvedDomain.IsInCorporation.ToString()));
+                        AddressBookEntry resolvedRecipient = addressBook.Find(recipient.Address);
+                        EventLog.AppendLogEntry(String.Format("The check of whether the recipient in the Address Book has returned a type of {0}", resolvedRecipient == null ? "NULL" : resolvedRecipient.RecipientType.ToString()));
+                        //bool isRecipientInternal = addressBook.IsInternal(recipient.Address);
+                        //EventLog.AppendLogEntry(String.Format("The check of whether the recipient in Internal has returned {0}", isRecipientInternal));
+
+                        if (resolvedDomain == null)
                         {
+                            EventLog.AppendLogEntry(String.Format("The recipient {0} has been categorized as EXTERNAL as the recipient domain IS NOT AN ACCEPTED DOMAIN", recipient.Address.ToString().ToLower()));
                             externalRecipients++;
                         }
                     }

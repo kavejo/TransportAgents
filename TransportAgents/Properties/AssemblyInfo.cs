@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("TransportAgents")]
 [assembly: AssemblyDescription("Sample Transport Agents, fully functional and extensively tested, that achieve different business goals by leveraging various Trasnport Agents capabiltiies in Microsoft Exchange Server.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Tommaso Toniolo - Microsoft")]
+[assembly: AssemblyCompany("Tommaso Toniolo - Sr. Cloud Solution Architect @ Microsoft")]
 [assembly: AssemblyProduct("TransportAgents")]
 [assembly: AssemblyCopyright("Copyright ©  2024")]
 [assembly: AssemblyTrademark("")]
@@ -31,5 +31,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.3.0")]
-[assembly: AssemblyFileVersion("1.0.3.0")]
+[assembly: AssemblyVersion("1.0.4.0")]
+[assembly: AssemblyFileVersion("1.0.4.0")]
